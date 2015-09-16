@@ -9,9 +9,9 @@ under the terms of the GNU General Public License (GPL).
 import sys, os, re, time, traceback, tempfile, subprocess, codecs, locale, unicodedata, copy
 
 ### Used by asciidocapi.py ###
-VERSION = '8.6.9'           # See CHANGLOG file for version history.
+VERSION = '8.6.9 python3 alpha1'           # See CHANGELOG file for version history.
 
-MIN_PYTHON_VERSION = '2.4'  # Require this version of Python or better.
+MIN_PYTHON_VERSION = '3.4'  # Require this version of Python or better.
 
 #---------------------------------------------------------------------------
 # Program constants.
@@ -35,6 +35,25 @@ OR, AND = ',', '+'              # Attribute list separators.
 #---------------------------------------------------------------------------
 # Utility functions and classes.
 #---------------------------------------------------------------------------
+
+def xopen(fname, mode='r', encoding=None):
+    """Python 3 file open adapter -- adds given or suitable encoding.
+
+    In the text mode, Python 3 always uses encoding for reading and writing
+    because the read or written data is of str type (that is UNICODE).
+    The default encoding for reading is 'utf-8-sig' (skips the BOM
+    automatically), and 'utf-8' for writing (no BOM).
+
+    No encoding is used in binary mode.
+    """
+    if 'b' in mode:
+        ecoding = None
+    elif 'r' in mode:
+        encoding = 'utf-8-sig'
+    else:
+        encoding = 'utf-8'
+    return open(fname, mode=mode, encoding=encoding)
+
 
 class EAsciiDoc(Exception): pass
 
@@ -899,7 +918,7 @@ def system(name, args, is_macro=False, attrs=None):
                 message.warning('%s: non-zero exit status' % syntax)
             try:
                 if os.path.isfile(tmp):
-                    f = open(tmp)
+                    f = xopen(tmp)
                     try:
                         lines = [s.rstrip() for s in f]
                     finally:
@@ -972,7 +991,7 @@ def system(name, args, is_macro=False, attrs=None):
         elif not is_safe_file(args):
             message.unsafe(syntax)
         else:
-            f = open(args)
+            f = xopen(args)
             try:
                 result = [s.rstrip() for s in f]
             finally:
@@ -1220,18 +1239,6 @@ def subs_attrs(lines, dictionary=None):
     else:
         return tuple(result)
 
-def char_encoding():
-    encoding = document.attributes.get('encoding')
-    if encoding:
-        try:
-            codecs.lookup(encoding)
-        except LookupError as e:
-            raise EAsciiDoc(str(e))
-    return encoding
-
-def char_len(s):
-    return len(char_decode(s))
-
 east_asian_widths = {'W': 2,   # Wide
                      'F': 2,   # Full-width (wide)
                      'Na': 1,  # Narrow
@@ -1242,8 +1249,7 @@ east_asian_widths = {'W': 2,   # Wide
 """Mapping of result codes from `unicodedata.east_asian_width()` to character
 column widths."""
 
-def column_width(s):
-    text = char_decode(s)
+def column_width(text):
     if isinstance(text, str):
         width = 0
         for c in text:
@@ -1251,21 +1257,6 @@ def column_width(s):
         return width
     else:
         return len(text)
-
-def char_decode(s):
-    if char_encoding():
-        try:
-            return s.decode(char_encoding())
-        except Exception:
-            raise EAsciiDoc("'%s' codec can't decode \"%s\"" % (char_encoding(), s))
-    else:
-        return s
-
-def char_encode(s):
-    if char_encoding():
-        return s.encode(char_encoding())
-    else:
-        return s
 
 def time_str(t):
     """Convert seconds since the Epoch to formatted local time string."""
@@ -1275,11 +1266,6 @@ def time_str(t):
         result = s + ' ' + time.tzname[1]
     else:
         result = s + ' ' + time.tzname[0]
-    # Attempt to convert the localtime to the output encoding.
-    try:
-        result = char_encode(result.decode(locale.getdefaultlocale()[1]))
-    except Exception:
-        pass
     return result
 
 def date_str(t):
@@ -1612,13 +1598,13 @@ class Document(object):
     def translate(self,has_header):
         if self.doctype == 'manpage':
             # Translate mandatory NAME section.
-            if next(Lex) is not Title:
+            if Lex.next() is not Title:
                 message.error('name section expected')
             else:
                 Title.translate()
                 if Title.level != 1:
                     message.error('name section title must be at level 1')
-                if not isinstance(next(Lex),Paragraph):
+                if not isinstance(Lex.next(),Paragraph):
                     message.error('malformed name section body')
                 lines = reader.read_until(r'^$')
                 s = ' '.join(lines)
@@ -1644,7 +1630,7 @@ class Document(object):
             if self.doctype in ('article','book'):
                 # Translate 'preamble' (untitled elements between header
                 # and first section title).
-                if next(Lex) is not Title:
+                if Lex.next() is not Title:
                     stag,etag = config.section2tags('preamble')
                     writer.write(stag,trace='preamble open')
                     Section.translate_body()
@@ -1656,11 +1642,11 @@ class Document(object):
             if config.header_footer:
                 hdr = config.subs_section('header',{})
                 writer.write(hdr,trace='header')
-            if next(Lex) is not Title:
+            if Lex.next() is not Title:
                 Section.translate_body()
         # Process remaining sections.
         while not reader.eof():
-            if next(Lex) is not Title:
+            if Lex.next() is not Title:
                 raise EAsciiDoc('section title expected')
             Section.translate()
         Section.setlevel(0) # Write remaining unwritten section close tags.
@@ -1721,9 +1707,8 @@ class Document(object):
             author = author.strip()
             author = re.sub(r'\s+',' ', author)
         if not initials:
-            initials = (char_decode(firstname)[:1] +
-                       char_decode(middlename)[:1] + char_decode(lastname)[:1])
-            initials = char_encode(initials).upper()
+            initials = firstname[:1] + middlename[:1] + lastname[:1]
+            initials = initials.upper()
         names = [firstname,middlename,lastname,author,initials]
         for i,v in enumerate(names):
             v = config.subs_specialchars(v)
@@ -1752,7 +1737,7 @@ class Header:
         raise AssertionError('no class instances allowed')
     @staticmethod
     def parse():
-        assert next(Lex) is Title and Title.level == 0
+        assert Lex.next() is Title and Title.level == 0
         attrs = document.attributes # Alias for readability.
         # Postpone title subs until backend conf files have been loaded.
         Title.translate(skipsubs=True)
@@ -1854,7 +1839,7 @@ class AttributeEntry:
         return result
     @staticmethod
     def translate():
-        assert next(Lex) is AttributeEntry
+        assert Lex.next() is AttributeEntry
         attr = AttributeEntry    # Alias for brevity.
         reader.read()            # Discard attribute entry from reader.
         while attr.value.endswith(' +'):
@@ -1932,7 +1917,7 @@ class AttributeList:
         return result
     @staticmethod
     def translate():
-        assert next(Lex) is AttributeList
+        assert Lex.next() is AttributeList
         reader.read()   # Discard attribute list from reader.
         attrs = {}
         d = AttributeList.match.groupdict()
@@ -1986,7 +1971,7 @@ class BlockTitle:
         return result
     @staticmethod
     def translate():
-        assert next(Lex) is BlockTitle
+        assert Lex.next() is BlockTitle
         reader.read()   # Discard title from reader.
         # Perform title substitutions.
         if not Title.subs:
@@ -2022,7 +2007,7 @@ class Title:
     def translate(skipsubs=False):
         """Parse the Title.attributes and Title.level from the reader. The
         real work has already been done by parse()."""
-        assert next(Lex) in (Title,FloatingTitle)
+        assert Lex.next() in (Title,FloatingTitle)
         # Discard title from reader.
         for i in range(Title.linecount):
             reader.read()
@@ -2068,17 +2053,17 @@ class Title:
             if len(lines) < 2: return False
             title,ul = lines[:2]
             title_len = column_width(title)
-            ul_len = char_len(ul)
+            ul_len = len(ul)
             if ul_len < 2: return False
             # Fast elimination check.
             if ul[:2] not in Title.underlines: return False
             # Length of underline must be within +-3 of title.
             if not ((ul_len-3 < title_len < ul_len+3)
                     # Next test for backward compatibility.
-                    or (ul_len-3 < char_len(title) < ul_len+3)):
+                    or (ul_len-3 < len(title) < ul_len+3)):
                 return False
             # Check for valid repetition of underline character pairs.
-            s = ul[:2]*((ul_len+1)/2)
+            s = ul[:2]*((ul_len+1)//2)
             if ul != s[:ul_len]: return False
             # Don't be fooled by back-to-back delimited blocks, require at
             # least one alphanumeric character in title.
@@ -2200,7 +2185,7 @@ class FloatingTitle(Title):
         return Title.isnext() and AttributeList.style() == 'float'
     @staticmethod
     def translate():
-        assert next(Lex) is FloatingTitle
+        assert Lex.next() is FloatingTitle
         Title.translate()
         Section.set_id()
         AttributeList.consume(Title.attributes)
@@ -2240,12 +2225,11 @@ class Section:
         """
         # Replace non-alpha numeric characters in title with underscores and
         # convert to lower case.
-        base_id = re.sub(r'(?u)\W+', '_', char_decode(title)).strip('_').lower()
+        base_id = re.sub(r'(?u)\W+', '_', title).strip('_').lower()
         if 'ascii-ids' in document.attributes:
             # Replace non-ASCII characters with ASCII equivalents.
             import unicodedata
             base_id = unicodedata.normalize('NFKD', base_id).encode('ascii','ignore')
-        base_id = char_encode(base_id)
         # Prefix the ID name with idprefix attribute or underscore if not
         # defined. Prefix ensures the ID does not clash with existing IDs.
         idprefix = document.attributes.get('idprefix','_')
@@ -2270,7 +2254,7 @@ class Section:
             AttributeList.attrs['id'] = Section.gen_id(Title.attributes['title'])
     @staticmethod
     def translate():
-        assert next(Lex) is Title
+        assert Lex.next() is Title
         prev_sectname = Title.sectname
         Title.translate()
         if Title.level == 0 and document.doctype != 'book':
@@ -2307,12 +2291,12 @@ class Section:
     @staticmethod
     def translate_body(terminator=Title):
         isempty = True
-        next = next(Lex)
+        next = Lex.next()
         while next and next is not terminator:
             if isinstance(terminator,DelimitedBlock) and next is Title:
                 message.error('section title not permitted in delimited block')
             next.translate()
-            next = next(Lex)
+            next = Lex.next()
             isempty = False
         # The section is not empty if contains a subsection.
         if next and isempty and Title.level > document.level:
@@ -2805,7 +2789,7 @@ class List(AbstractBlock):
         writer.write(entrytag[0],trace='list entry open')
         writer.write(labeltag[0],trace='list label open')
         # Write labels.
-        while next(Lex) is self:
+        while Lex.next() is self:
             reader.read()   # Discard (already parsed item first line).
             writer.write_tag(self.tag.term, [self.label],
                              self.presubs, self.attributes,trace='list term')
@@ -2829,13 +2813,13 @@ class List(AbstractBlock):
         while True:
             continuation = reader.read_next() == '+'
             if continuation: reader.read()  # Discard continuation line.
-            while next(Lex) in (BlockTitle,AttributeList):
+            while Lex.next() in (BlockTitle,AttributeList):
                 # Consume continued element title and attributes.
                 Lex.next().translate()
             if not continuation and BlockTitle.title:
                 # Titled elements terminate the list.
                 break
-            next = next(Lex)
+            next = Lex.next()
             if next in lists.open:
                 break
             elif isinstance(next,List):
@@ -2961,7 +2945,7 @@ class List(AbstractBlock):
             writer.write(stag,trace='list open')
         self.ordinal = 0
         # Process list till list syntax changes or there is a new title.
-        while next(Lex) is self and not BlockTitle.title:
+        while Lex.next() is self and not BlockTitle.title:
             self.ordinal += 1
             document.attributes['listindex'] = str(self.ordinal)
             if self.type in ('numbered','callout'):
@@ -4073,8 +4057,6 @@ class CalloutMap:
 # Input stream Reader and output stream writer classes.
 #---------------------------------------------------------------------------
 
-UTF8_BOM = '\xef\xbb\xbf'
-
 class Reader1:
     """Line oriented AsciiDoc input file reader. Processes include and
     conditional inclusion system macros. Tabs are expanded and lines are right
@@ -4092,10 +4074,9 @@ class Reader1:
         self._lineno = 0        # The last line read from file object f.
         self.current_depth = 0  # Current include depth.
         self.max_depth = 10     # Initial maxiumum allowed include depth.
-        self.bom = None         # Byte order mark (BOM).
         self.infile = None      # Saved document 'infile' attribute.
         self.indir = None       # Saved document 'indir' attribute.
-    def open(self,fname):
+    def open(self, fname):
         self.fname = fname
         message.verbose('reading: '+fname)
         if fname == '<stdin>':
@@ -4103,20 +4084,14 @@ class Reader1:
             self.infile = None
             self.indir = None
         else:
-            self.f = open(fname,'rb')
+            self.f = xopen(fname)
             self.infile = fname
             self.indir = os.path.dirname(fname)
         document.attributes['infile'] = self.infile
         document.attributes['indir'] = self.indir
         self._lineno = 0            # The last line read from file object f.
         self.next = []
-        # Prefill buffer by reading the first line and then pushing it back.
-        if Reader1.read(self):
-            if self.cursor[2].startswith(UTF8_BOM):
-                self.cursor[2] = self.cursor[2][len(UTF8_BOM):]
-                self.bom = UTF8_BOM
-            self.unread(self.cursor)
-            self.cursor = None
+
     def closefile(self):
         """Used by class methods to close nested include files."""
         self.f.close()
@@ -4129,7 +4104,7 @@ class Reader1:
         white space. Maintain self.next read ahead buffer. If skip=True then
         conditional exclusion is active (ifdef and ifndef macros)."""
         # Top up buffer.
-        if len(self.__next__) <= self.READ_BUFFER_MIN:
+        if len(self.next) <= self.READ_BUFFER_MIN:
             s = self.f.readline()
             if s:
                 self._lineno = self._lineno + 1
@@ -4138,13 +4113,13 @@ class Reader1:
                     s = s.expandtabs(self.tabsize)
                 s = s.rstrip()
                 self.next.append([self.fname,self._lineno,s])
-                if len(self.__next__) > self.READ_BUFFER_MIN:
+                if len(self.next) > self.READ_BUFFER_MIN:
                     break
                 s = self.f.readline()
                 if s:
                     self._lineno = self._lineno + 1
         # Return first (oldest) buffer entry.
-        if len(self.__next__) > 0:
+        if len(self.next) > 0:
             self.cursor = self.next[0]
             del self.next[0]
             result = self.cursor[2]
@@ -4178,7 +4153,7 @@ class Reader1:
                                 message.verbose('include1: ' + fname, linenos=False)
                                 # Store the include file in memory for later
                                 # retrieval by the {include1:} system attribute.
-                                f = open(fname)
+                                f = xopen(fname)
                                 try:
                                     config.include1[fname] = [
                                         s.rstrip() for s in f]
@@ -4225,7 +4200,7 @@ class Reader1:
         return result
     def eof(self):
         """Returns True if all lines have been read."""
-        if len(self.__next__) == 0:
+        if len(self.next) == 0:
             # End of current file.
             if self.parent:
                 self.closefile()
@@ -4413,25 +4388,21 @@ class Reader(Reader1):
 class Writer:
     """Writes lines to output file."""
     def __init__(self):
-        self.newline = '\r\n'            # End of line terminator.
+        self.newline = '\n'              # End of line terminator.
         self.f = None                    # Output file object.
         self.fname = None                # Output file name.
         self.lines_out = 0               # Number of lines written.
         self.skip_blank_lines = False    # If True don't output blank lines.
-    def open(self,fname,bom=None):
-        '''
-        bom is optional byte order mark.
-        http://en.wikipedia.org/wiki/Byte-order_mark
-        '''
+
+    def open(self, fname):
         self.fname = fname
         if fname == '<stdout>':
             self.f = sys.stdout
         else:
-            self.f = open(fname,'wb+')
+            self.f = xopen(fname, 'w')
         message.verbose('writing: '+writer.fname,False)
-        if bom:
-            self.f.write(bom)
         self.lines_out = 0
+
     def close(self):
         if self.fname != '<stdout>':
             self.f.close()
@@ -5458,17 +5429,16 @@ class Table_OLD(AbstractBlock):
         for row in rows:
             data = []
             start = 0
-            # build an encoded representation
-            row = char_decode(row)
+            # build a representation
             for c in self.columns:
                 end = start + c.rulerwidth
                 if c is self.columns[-1]:
                     # Text in last column can continue forever.
                     # Use the encoded string to slice, but convert back
                     # to plain string before further processing
-                    data.append(char_encode(row[start:]).strip())
+                    data.append(row[start:].strip())
                 else:
-                    data.append(char_encode(row[start:end]).strip())
+                    data.append(row[start:end].strip())
                 start = end
             result.append(data)
         return result
@@ -6016,7 +5986,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         else:
             writer.newline = config.newline
             try:
-                writer.open(outfile, reader.bom)
+                writer.open(outfile)
                 try:
                     document.translate(has_header) # Generate the output.
                 finally:
