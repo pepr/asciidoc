@@ -35,14 +35,14 @@ Doctests:
 
 2. Check error handling:
 
-   >>> import StringIO
+   >>> import io
    >>> asciidoc = AsciiDocAPI()
    >>> infile = io.StringIO('---------')
    >>> outfile = io.StringIO()
    >>> asciidoc.execute(infile, outfile)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-     File "asciidocapi.py", line 189, in execute
+     File "asciidocapi3.py", line 189, in execute
        raise AsciiDocError(self.messages[-1])
    AsciiDocError: ERROR: <stdin>: line 1: [blockdef-listing] missing closing delimiter
 
@@ -132,13 +132,24 @@ class Version(object):
         self.minor = int(groups[1])
         self.micro = int(groups[3] or '0')
         self.suffix = groups[4] or ''
-    def __cmp__(self, other):
-        result = cmp(self.major, other.major)
-        if result == 0:
-            result = cmp(self.minor, other.minor)
-            if result == 0:
-                result = cmp(self.micro, other.micro)
-        return result
+
+    def __lt__(self, other):
+        if self.major < other.major:
+            return True
+        if self.major > other.major:
+            return False
+        # Major version numbers are equal.
+        if self.minor < other.minor:
+            return True
+        if self.minor > other.minor:
+            return False
+        # Minor version numbers are equal.
+        return self.micro < other.micro
+
+    def __eq__(self, other):
+        return self.major == other.major \
+           and self.minor == other.minor \
+           and self.micro == other.micro
 
 
 class AsciiDocAPI(object):
