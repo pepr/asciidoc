@@ -1,3 +1,15 @@
+Attention: `py3dev` branch for Python 3 port
+============================================
+
+Attention, this content is is related to the `py3dev` branch
+of the asciidoc github fork https://github.com/pepr/asciidoc.git
+
+The fork and the branch was created explicitly for the development
+of Python 3 port of the original https://github.com/asciidoc/asciidoc.
+See the https://github.com/asciidoc/asciidoc/issues/83 for the beginning
+of the effort.
+
+
 [float]
 AsciiDoc image:https://travis-ci.org/asciidoc/asciidoc.svg?branch=master[Build Status,link=https://travis-ci.org/asciidoc/asciidoc]
 ===================================================================================================================================
