@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 asciidocapi - AsciiDoc API wrapper class.
 
@@ -16,9 +16,9 @@ Doctests:
 
 1. Check execution:
 
-   >>> import StringIO
-   >>> infile = StringIO.StringIO('Hello *{author}*')
-   >>> outfile = StringIO.StringIO()
+   >>> import io
+   >>> infile = io.StringIO('Hello *{author}*')
+   >>> outfile = io.StringIO()
    >>> asciidoc = AsciiDocAPI()
    >>> asciidoc.options('--no-header-footer')
    >>> asciidoc.attributes['author'] = 'Joe Bloggs'
@@ -27,8 +27,8 @@ Doctests:
    <p>Hello <strong>Joe Bloggs</strong></p>
 
    >>> asciidoc.attributes['author'] = 'Bill Smith'
-   >>> infile = StringIO.StringIO('Hello _{author}_')
-   >>> outfile = StringIO.StringIO()
+   >>> infile = io.StringIO('Hello _{author}_')
+   >>> outfile = io.StringIO()
    >>> asciidoc.execute(infile, outfile, backend='docbook')
    >>> print outfile.getvalue()
    <simpara>Hello <emphasis>Bill Smith</emphasis></simpara>
@@ -37,8 +37,8 @@ Doctests:
 
    >>> import StringIO
    >>> asciidoc = AsciiDocAPI()
-   >>> infile = StringIO.StringIO('---------')
-   >>> outfile = StringIO.StringIO()
+   >>> infile = io.StringIO('---------')
+   >>> outfile = io.StringIO()
    >>> asciidoc.execute(infile, outfile)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
