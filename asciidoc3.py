@@ -325,9 +325,11 @@ def strip_quotes(s):
 
 def is_re(s):
     """Return True if s is a valid regular expression else return False."""
-    try: re.compile(s)
-    except: return False
-    else: return True
+    try:
+        re.compile(s)
+        return True
+    except:
+        return False
 
 def re_join(relist):
     """Join list of regular expressions re1,re2,... to single regular
