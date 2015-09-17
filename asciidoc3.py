@@ -35,23 +35,26 @@ OR, AND = ',', '+'              # Attribute list separators.
 #---------------------------------------------------------------------------
 # Utility functions and classes.
 #---------------------------------------------------------------------------
-
 def xopen(fname, mode='r', encoding=None):
     """Python 3 file open adapter -- adds given or suitable encoding.
 
     In the text mode, Python 3 always uses encoding for reading and writing
     because the read or written data is of str type (that is UNICODE).
-    The default encoding for reading is 'utf-8-sig' (skips the BOM
-    automatically), and 'utf-8' for writing (no BOM).
-
-    No encoding is used in binary mode.
     """
-    if 'b' in mode:
-        ecoding = None
-    elif 'r' in mode:
-        encoding = 'utf-8-sig'
-    else:
-        encoding = 'utf-8'
+    assert 'b' not in mode
+
+    if encoding is None:
+        encoding = document.attributes.get('encoding')
+        ##print('Explicit encoding from the document:', encoding)
+
+    if encoding is None:
+        # The {encoding} was not specified in the document.
+        # The default encoding for reading is 'utf-8-sig' (skips the BOM
+        # automatically), and 'utf-8' for writing (no BOM).
+        if 'r' in mode:
+            encoding = 'utf-8-sig'
+        else:
+            encoding = 'utf-8'
     return open(fname, mode=mode, encoding=encoding)
 
 
@@ -1407,7 +1410,7 @@ class Lex:
 # Document element classes parse AsciiDoc reader input and write DocBook writer
 # output.
 #---------------------------------------------------------------------------
-class Document(object):
+class Document:
 
     # doctype property.
     def getdoctype(self):
