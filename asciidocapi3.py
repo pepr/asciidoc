@@ -202,8 +202,8 @@ class AsciiDocAPI(object):
             try:
                 try:
                     if reload:
-                        import builtins  # Because reload() is shadowed.
-                        builtins.reload(self.asciidoc)
+                        import importlib 
+                        importlib.reload(self.asciidoc)
                     else:
                         import asciidoc3
                         self.asciidoc = asciidoc3
