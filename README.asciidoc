@@ -2,7 +2,7 @@ Attention: `py3dev` branch for Python 3 port
 ============================================
 
 This content is is related to the `py3dev` branch
-of the asciidoc github fork https://github.com/pepr/asciidoc.git
+of the asciidoc github fork -- see https://github.com/pepr/asciidoc/tree/py3dev.
 
 The fork and the branch was created explicitly for the development
 of Python 3 port of the original https://github.com/asciidoc/asciidoc.
