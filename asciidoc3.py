@@ -6058,7 +6058,7 @@ def show_help(topic, f=None):
         message.stderr('ambiguous help topic: %s' % topic)
     else:
         for line in lines:
-            print(line, file=f)
+            f.write(line + '\n')
 
 ### Used by asciidocapi.py ###
 def execute(cmd,opts,args):
