@@ -843,11 +843,11 @@ def filter_lines(filter_cmd, lines, attrs={}):
     try:
         p = subprocess.Popen(filter_cmd, shell=True,
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        output = p.communicate(os.linesep.join(lines))[0]
+        output = p.communicate('\n'.join(lines).encode('utf-8'))[0]
     except Exception:
         raise EAsciiDoc('filter error: %s: %s' % (filter_cmd, sys.exc_info()[1]))
     if output:
-        result = [s.rstrip() for s in output.split(os.linesep)]
+        result = [s.rstrip() for s in output.decode('utf-8').split('\n')]
     else:
         result = []
     filter_status = p.wait()
