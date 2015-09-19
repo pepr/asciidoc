@@ -126,7 +126,7 @@ class InsensitiveDict(dict):
         return dict.setdefault(self, key.lower(), default)
 
 
-class Trace(object):
+class Trace:
     """
     Used in conjunction with the 'trace' attribute to generate diagnostic
     output. There is a single global instance of this class named trace.
@@ -4552,7 +4552,7 @@ class Config:
         # [miscellaneous] section.
         self.tabsize = 8
         self.textwidth = 70             # DEPRECATED: Old tables only.
-        self.newline = '\r\n'
+        self.newline = '\n'
         self.pagewidth = None
         self.pageunits = None
         self.outfilesuffix = ''
@@ -5922,12 +5922,19 @@ messages = message.messages
 
 
 def asciidoc(backend, doctype, confiles, infile, outfile, options):
-    """Convert AsciiDoc document to DocBook document of type doctype
-    The AsciiDoc document is read from file object src the translated
-    DocBook file written to file object dst."""
+    """Convert AsciiDoc document to `backend` document of type `doctype`.
+
+    The AsciiDoc document is read from the `infile` file object,
+    the translated `backend` content is written to the `outfile` file object.
+    """
+
     def load_conffiles(include=[], exclude=[]):
-        # Load conf files specified on the command-line and by the conf-files attribute.
-        files = document.attributes.get('conf-files','')
+        """Loads configuration files.
+
+        The configuration files are specified by the `'conf-files'`
+        document attribute and on the command-line (closure for `confiles`).
+        """
+        files = document.attributes.get('conf-files', '')
         files = [f.strip() for f in files.split('|') if f.strip()]
         files += confiles
         if files:
@@ -5936,12 +5943,13 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
                     config.load_file(f, include=include, exclude=exclude)
                 else:
                     raise EAsciiDoc('missing configuration file: %s' % f)
+
     try:
         document.attributes['python'] = sys.executable
         for f in config.filters:
             if not config.find_config_dir('filters', f):
                 raise EAsciiDoc('missing filter: %s' % f)
-        if doctype not in (None,'article','manpage','book'):
+        if doctype not in (None, 'article', 'manpage', 'book'):
             raise EAsciiDoc('illegal document type')
         # Set processing options.
         for o in options:
@@ -6120,11 +6128,11 @@ def show_help(topic, f=None):
             f.write(line + '\n')
 
 ### Used by asciidocapi.py ###
-def execute(cmd,opts,args):
-    """
-    Execute asciidoc with command-line options and arguments.
-    cmd is asciidoc command or asciidoc.py path.
-    opts and args conform to values returned by getopt.getopt().
+def execute(cmd, opts, args):
+    """Execute `asciidoc` with command-line options and arguments.
+
+    `cmd` is asciidoc command or asciidoc.py path.
+    `opts` and `args` conform to values returned by getopt.getopt().
     Raises SystemExit if an error occurs.
 
     Doctests:
@@ -6144,7 +6152,6 @@ def execute(cmd,opts,args):
        <p>Hello <strong>Joe Bloggs</strong></p>
 
        >>>
-
     """
     config.init(cmd)
     if len(args) > 1:
@@ -6156,8 +6163,8 @@ def execute(cmd,opts,args):
     outfile = None
     options = []
     help_option = False
-    for o,v in opts:
-        if o in ('--help','-h'):
+    for o, v in opts:
+        if o in ('--help', '-h'):
             help_option = True
         #DEPRECATED: --unsafe option.
         if o == '--unsafe':

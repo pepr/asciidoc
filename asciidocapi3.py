@@ -76,7 +76,7 @@ class AsciiDocError(Exception):
     pass
 
 
-class Options(object):
+class Options:
     """
     Stores asciidoc(1) command options.
     """
@@ -91,39 +91,37 @@ class Options(object):
         self.values.append((name,value))
 
 
-class Version(object):
+class Version:
     """
-    Parse and compare AsciiDoc version numbers. Instance attributes:
+    Parse and compare AsciiDoc version numbers.
 
-    string: String version number '<major>.<minor>[.<micro>][suffix]'.
-    major:  Integer major version number.
-    minor:  Integer minor version number.
-    micro:  Integer micro version number.
-    suffix: Suffix (begins with non-numeric character) is ignored when
-            comparing.
+    Instance attributes:
+        string: String version number 'major.minor[.micro][suffix]'.
+        major:  Integer major version number.
+        minor:  Integer minor version number.
+        micro:  Integer micro version number.
+        suffix: Suffix (begins with non-numeric character) is ignored when comparing.
 
-    Doctest examples:
-
-    >>> Version('8.2.5') < Version('8.3 beta 1')
-    True
-    >>> Version('8.3.0') == Version('8.3. beta 1')
-    True
-    >>> Version('8.2.0') < Version('8.20')
-    True
-    >>> Version('8.20').major
-    8
-    >>> Version('8.20').minor
-    20
-    >>> Version('8.20').micro
-    0
-    >>> Version('8.20').suffix
-    ''
-    >>> Version('8.20 beta 1').suffix
-    'beta 1'
-
+    Examples:
+        >>> Version('8.2.5') < Version('8.3 beta 1')
+        True
+        >>> Version('8.3.0') == Version('8.3. beta 1')
+        True
+        >>> Version('8.2.0') < Version('8.20')
+        True
+        >>> Version('8.20').major
+        8
+        >>> Version('8.20').minor
+        20
+        >>> Version('8.20').micro
+        0
+        >>> Version('8.20').suffix
+        ''
+        >>> Version('8.20 beta 1').suffix
+        'beta 1'
     """
     def __init__(self, version):
-        self.string = version
+        self.string = version #!< xxx
         reo = re.match(r'^(\d+)\.(\d+)(\.(\d+))?\s*(.*?)\s*$', self.string)
         if not reo:
             raise ValueError('invalid version number: %s' % self.string)
@@ -152,7 +150,7 @@ class Version(object):
            and self.micro == other.micro
 
 
-class AsciiDocAPI(object):
+class AsciiDocAPI:
     """
     AsciiDoc API class.
     """
@@ -202,7 +200,7 @@ class AsciiDocAPI(object):
             try:
                 try:
                     if reload:
-                        import importlib 
+                        import importlib
                         importlib.reload(self.asciidoc)
                     else:
                         import asciidoc3
