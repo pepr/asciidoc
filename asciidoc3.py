@@ -35,6 +35,7 @@ OR, AND = ',', '+'              # Attribute list separators.
 #---------------------------------------------------------------------------
 # Utility functions and classes.
 #---------------------------------------------------------------------------
+
 class EAsciiDoc(Exception): pass
 
 class OrderedDict(dict):
@@ -1271,6 +1272,38 @@ def time_str(t):
         result = s + ' ' + time.tzname[1]
     else:
         result = s + ' ' + time.tzname[0]
+
+    # Because of the bug in Windows libraries, Python 3.3 tried to work around
+    # some issues. However, the shit hit the fan, and the bug bubbled here.
+    # The `time.tzname` elements are (unicode) strings; however, they were
+    # filled with bad content. See https://bugs.python.org/issue16322 for details.
+    # Actually, wrong characters were passed instead of the good ones.
+    # This code should be skipped later by versions of Python that will fix
+    # the issue.
+    import platform
+    if platform.system() == 'Windows':
+        # The concrete example for Czech locale:
+        # - cp1250 (windows-1250) is used as native encoding
+        # - the time.tzname[0] should start with 'Střední Evropa'
+        # - the ascii('Střední Evropa') should return "'St\u0159edn\xed Evropa'"
+        # - because of the bug it returns "'St\xf8edn\xed Evropa'"
+        #
+        # The 'ř' character has unicode code point `\u0159` (that is hex)
+        # and the `\xF8` code in cp1250. The `\xF8` was wrongly used
+        # as a Unicode code point `\u00F8` -- this is for the Unicode
+        # character 'ø' that is observed in the string.
+        #
+        # To fix it, the `result` string must be reinterpreted with a different
+        # encoding. When working with Python 3 strings, it can probably
+        # done only through the string representation and `eval()`. Here
+        # the `eval()` is not very dangerous because the string was obtained
+        # from the OS library, and the values are limited to certain subset.
+        #
+        # The `ascii()` literal is prefixed by `binary` type prefix character,
+        # `eval`uated, and the binary result is decoded to the correct string.
+        local_encoding = locale.getdefaultlocale()[1]
+        b = eval('b' + ascii(result))
+        result = b.decode(local_encoding)
     return result
 
 def date_str(t):
@@ -1280,15 +1313,21 @@ def date_str(t):
 
 
 class Lex:
-    """Lexical analysis routines. Static methods and attributes only."""
+    """Lexical analysis routines.
+
+    Static methods and attributes only.
+    """
     prev_element = None
     prev_cursor = None
+
     def __init__(self):
         raise AssertionError('no class instances allowed')
+
     @staticmethod
     def next():
-        """Returns class of next element on the input (None if EOF).  The
-        reader is assumed to be at the first line following a previous element,
+        """Returns class of next element on the input (None if EOF).
+
+        The reader is assumed to be at the first line following a previous element,
         end of file or line one.  Exits with the reader pointing to the first
         line of the next element or EOF (leading blank lines are skipped)."""
         reader.skip_blank_lines()
@@ -1371,9 +1410,12 @@ class Lex:
         return result
 
     @staticmethod
-    def subs(lines,options):
-        """Perform inline processing specified by 'options' (in 'options'
-        order) on sequence of 'lines'."""
+    def subs(lines, options):
+        """Inline processing of `lines` by `options`.
+
+        Perform inline processing specified by `options`
+        (in `options` order) on sequence of `lines`.
+        """
         if not lines or not options:
             return lines
         options = Lex.canonical_subs(options)
@@ -1395,14 +1437,18 @@ class Lex:
 
     @staticmethod
     def set_margin(lines, margin=0):
-        """Utility routine that sets the left margin to 'margin' space in a
-        block of non-blank lines."""
+        """Sets the left margin in a block of non-blank lines.
+
+        Utility routine that sets the left margin to `margin` space
+        in a block of non-blank lines."""
         # Calculate width of block margin.
         lines = list(lines)
         width = len(lines[0])
+        rex = re.compile(r'\S')
         for s in lines:
-            i = re.search(r'\S',s).start()
-            if i < width: width = i
+            i = rex.search(s).start()
+            if i < width:
+                width = i
         # Strip margin width from all lines.
         for i in range(len(lines)):
             lines[i] = ' '*margin + lines[i][width:]
@@ -2092,6 +2138,7 @@ class Title:
             pass
         Title.attributes['level'] = str(Title.level)
         return result
+
     @staticmethod
     def load(entries):
         """Load and validate [titles] section entries dictionary."""
@@ -2474,6 +2521,7 @@ class AbstractBlock:
                 s = ''
                 for k,v in d.items(): s += '%s=%r,' % (k,v)
                 write('%s-style=%s' % (style,s[:-1]))
+
     def validate(self):
         """Validate block after the complete configuration has been loaded."""
         if self.is_conf_entry('delimiter') and not self.delimiter:
@@ -2507,6 +2555,7 @@ class AbstractBlock:
             elif not all_styles_have_template:
                 if not isinstance(self,List): # Lists don't have templates.
                     message.warning('missing styles templates: [%s]' % self.defname)
+
     def isnext(self):
         """Check if this block is next in document reader."""
         result = False
@@ -2520,15 +2569,17 @@ class AbstractBlock:
                 self.mo = mo
                 result = True
         return result
+
     def translate(self):
         """Translate block from document reader."""
         if not self.presubs:
             self.presubs = config.subsnormal
         if reader.cursor:
             self.start = reader.cursor[:]
+
     def push_blockname(self, blockname=None):
-        '''
-        On block entry set the 'blockname' attribute.
+        '''On block entry set the `blockname` attribute.
+
         Only applies to delimited blocks, lists and tables.
         '''
         if blockname is None:
@@ -2536,9 +2587,10 @@ class AbstractBlock:
         trace('push blockname', blockname)
         self.blocknames.append(blockname)
         document.attributes['blockname'] = blockname
+
     def pop_blockname(self):
         '''
-        On block exits restore previous (parent) 'blockname' attribute or
+        On block exits restore previous (parent) `blockname` attribute or
         undefine it if we're no longer inside a block.
         '''
         assert len(self.blocknames) > 0
@@ -2548,30 +2600,31 @@ class AbstractBlock:
             document.attributes['blockname'] = None
         else:
             document.attributes['blockname'] = self.blocknames[-1]
-    def merge_attributes(self,attrs,params=[]):
-        """
-        Use the current block's attribute list (attrs dictionary) to build a
-        dictionary of block processing parameters (self.parameters) and tag
-        substitution attributes (self.attributes).
 
-        1. Copy the default parameters (self.*) to self.parameters.
-        self.parameters are used internally to render the current block.
-        Optional params array of additional parameters.
+    def merge_attributes(self, attrs, params=[]):
+        """Merge given attributes to the current block.
 
-        2. Copy attrs to self.attributes. self.attributes are used for template
-        and tag substitution in the current block.
+        Use the current block's attribute list (`attrs` dictionary) to build a
+        dictionary of block processing parameters (`self.parameters`) and tag
+        substitution attributes (`self.attributes`).
 
-        3. If a style attribute was specified update self.parameters with the
+        1. Copy the default parameters (`self.*`) to `self.parameters`.
+        The `self.parameters` are used internally to render the current block.
+        Optional `params` array of additional parameters.
+
+        2. Copy `attrs` to `self.attributes`. The `self.attributes` are used
+        for template and tag substitution in the current block.
+
+        3. If a style attribute was specified update `self.parameters` with the
         corresponding style parameters; if there are any style parameters
-        remaining add them to self.attributes (existing attribute list entries
+        remaining add them to `self.attributes` (existing attribute list entries
         take precedence).
 
-        4. Set named positional attributes in self.attributes if self.posattrs
+        4. Set named positional attributes in `self.attributes` if `self.posattrs`
         was specified.
 
-        5. Finally self.parameters is updated with any corresponding parameters
-        specified in attrs.
-
+        5. Finally `self.parameters` is updated with any corresponding parameters
+        specified `in attrs`.
         """
 
         def check_array_parameter(param):
@@ -2635,11 +2688,13 @@ class AbstractBlocks:
     """List of block definitions."""
     PREFIX = ''         # Conf file section name prefix set in derived classes.
     BLOCK_TYPE = None   # Block type set in derived classes.
+
     def __init__(self):
         self.current=None
         self.blocks = []        # List of Block objects.
         self.default = None     # Default Block.
         self.delimiters = None  # Combined delimiters regular expression.
+
     def load(self,sections):
         """Load block definition from 'sections' dictionary."""
         for k in sections.keys():
@@ -2656,15 +2711,18 @@ class AbstractBlocks:
                     b.load(k,d)
                 except EAsciiDoc as e:
                     raise EAsciiDoc('[%s] %s' % (k,str(e)))
+
     def dump(self):
         for b in self.blocks:
             b.dump()
+
     def isnext(self):
         for b in self.blocks:
             if b.isnext():
                 self.current = b
                 return True;
         return False
+
     def validate(self):
         """Validate the block definitions."""
         # Validate delimiters and build combined lists delimiter pattern.
@@ -2675,6 +2733,7 @@ class AbstractBlocks:
             if b.delimiter:
                 delimiters.append(b.delimiter)
         self.delimiters = re_join(delimiters)
+
 
 class Paragraph(AbstractBlock):
     def __init__(self):
