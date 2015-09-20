@@ -4122,17 +4122,21 @@ class CalloutMap:
 #---------------------------------------------------------------------------
 
 class Reader1:
-    """Line oriented AsciiDoc input file reader. Processes include and
-    conditional inclusion system macros. Tabs are expanded and lines are right
-    trimmed."""
-    # This class is not used directly, use Reader class instead.
+    """Line oriented AsciiDoc input file reader.
+
+    The reader processes include and conditional inclusion system macros.
+    Tabs are expanded and lines are right trimmed.
+
+    Attention: This class is not to be used directly. Use the Reader class instead.
+    """
     READ_BUFFER_MIN = 10        # Read buffer low level.
+
     def __init__(self):
         self.f = None           # Input file object.
         self.fname = None       # Input file name.
         self.next = []          # Read ahead buffer containing
-                                # [filename,linenumber,linetext] lists.
-        self.cursor = None      # Last read() [filename,linenumber,linetext].
+                                # (filename, linenumber, linetext) tuples.
+        self.cursor = None      # Last read() [filename, linenumber, linetext].
         self.tabsize = 8        # Tab expansion number of spaces.
         self.parent = None      # Included reader's parent reader.
         self._lineno = 0        # The last line read from file object f.
@@ -4140,9 +4144,10 @@ class Reader1:
         self.max_depth = 10     # Initial maxiumum allowed include depth.
         self.infile = None      # Saved document 'infile' attribute.
         self.indir = None       # Saved document 'indir' attribute.
+
     def open(self, fname):
         self.fname = fname
-        message.verbose('reading: '+fname)
+        message.verbose('reading: ' + fname)
         if fname == '<stdin>':
             self.f = sys.stdin
             self.infile = None
@@ -4160,13 +4165,18 @@ class Reader1:
         """Used by class methods to close nested include files."""
         self.f.close()
         self.next = []
+
     def close(self):
         self.closefile()
         self.__init__()
+
     def read(self, skip=False):
-        """Read next line. Return None if EOF. Expand tabs. Strip trailing
-        white space. Maintain self.next read ahead buffer. If skip=True then
-        conditional exclusion is active (ifdef and ifndef macros)."""
+        """Read and proces the next line.
+
+        Return None if EOF. Expand tabs. Strip trailing white space.
+        Maintain self.next read ahead buffer. If skip=True then
+        conditional exclusion is active (ifdef and ifndef macros).
+        """
         # Top up buffer.
         if len(self.next) <= self.READ_BUFFER_MIN:
             s = self.f.readline()
@@ -4176,7 +4186,7 @@ class Reader1:
                 if self.tabsize != 0:
                     s = s.expandtabs(self.tabsize)
                 s = s.rstrip()
-                self.next.append([self.fname,self._lineno,s])
+                self.next.append((self.fname, self._lineno, s))
                 if len(self.next) > self.READ_BUFFER_MIN:
                     break
                 s = self.f.readline()
@@ -4188,11 +4198,11 @@ class Reader1:
             del self.next[0]
             result = self.cursor[2]
             # Check for include macro.
-            mo = macros.match('+',r'^include[1]?$',result)
+            mo = macros.match('+', r'^include[1]?$', result)
             if mo and not skip:
                 # Parse include macro attributes.
                 attrs = {}
-                parse_attributes(mo.group('attrlist'),attrs)
+                parse_attributes(mo.group('attrlist'), attrs)
                 warnings = attrs.get('warnings', True)
                 # Don't process include macro once the maximum depth is reached.
                 if self.current_depth >= self.max_depth:
@@ -4230,7 +4240,7 @@ class Reader1:
                             return result
                 # Clone self and set as parent (self assumes the role of child).
                 parent = Reader1()
-                assign(parent,self)
+                assign(parent, self)
                 self.parent = parent
                 # Set attributes in child.
                 if 'tabsize' in attrs:
@@ -4262,13 +4272,14 @@ class Reader1:
             else:
                 result = None
         return result
+
     def eof(self):
         """Returns True if all lines have been read."""
         if len(self.next) == 0:
             # End of current file.
             if self.parent:
                 self.closefile()
-                assign(self,self.parent)    # Restore parent reader.
+                assign(self, self.parent)    # Restore parent reader.
                 document.attributes['infile'] = self.infile
                 document.attributes['indir'] = self.indir
                 return Reader1.eof(self)
@@ -4276,18 +4287,19 @@ class Reader1:
                 return True
         else:
             return False
+
     def read_next(self):
         """Like read() but does not advance file pointer."""
         if Reader1.eof(self):
             return None
         else:
             return self.next[0][2]
-    def unread(self,cursor):
-        """Push the line (filename,linenumber,linetext) tuple back into the read
-        buffer. Note that it's up to the caller to restore the previous
-        cursor."""
+
+    def unread(self, cursor):
+        """Push the line (filename, linenumber, linetext) tuple back into the read
+        buffer. Note that it's up to the caller to restore the previous cursor."""
         assert cursor
-        self.next.insert(0,cursor)
+        self.next.insert(0, cursor)
 
 class Reader(Reader1):
     """ Wraps (well, sought of) Reader1 class and implements conditional text
