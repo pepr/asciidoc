@@ -554,7 +554,7 @@ def parse_named_attributes(s,attrs):
     Returns False if invalid syntax.
     Example:
     attrs: 'star="sun",planet="earth"'
-    dict: {'planet':'earth', 'star':'sun'}
+    dict: {'planet': 'earth', 'star': 'sun'}
     """
     def f(**keywords): return keywords
 
@@ -3183,9 +3183,9 @@ class Cell:
         return result
 
 class Table(AbstractBlock):
-    ALIGN = {'<':'left', '>':'right', '^':'center'}
-    VALIGN = {'<':'top', '>':'bottom', '^':'middle'}
-    FORMATS = ('psv','csv','dsv')
+    ALIGN = {'<': 'left', '>': 'right', '^': 'center'}
+    VALIGN = {'<': 'top', '>': 'bottom', '^': 'middle'}
+    FORMATS = ('psv', 'csv', 'dsv')
     SEPARATORS = dict(
         csv=',',
         dsv=r':|\n',
@@ -4303,18 +4303,22 @@ class Reader1:
 
 class Reader(Reader1):
     """ Wraps (well, sought of) Reader1 class and implements conditional text
-    inclusion."""
+    inclusion.
+    """
+
     def __init__(self):
         Reader1.__init__(self)
         self.depth = 0          # if nesting depth.
         self.skip = False       # true if we're skipping ifdef...endif.
         self.skipname = ''      # Name of current endif macro target.
         self.skipto = -1        # The depth at which skipping is reenabled.
+
     def read_super(self):
         result = Reader1.read(self,self.skip)
         if result is None and self.skip:
             raise EAsciiDoc('missing endif::%s[]' % self.skipname)
         return result
+
     def read(self):
         result = self.read_super()
         if result is None:
@@ -4401,8 +4405,10 @@ class Reader(Reader1):
             if macros.match('+',r'\\eval|\\sys|\\sys2|\\ifdef|\\ifndef|\\endif|\\include|\\include1',result):
                 result = result[1:]
         return result
+
     def eof(self):
         return self.read_next() is None
+
     def read_next(self):
         save_cursor = self.cursor
         result = self.read()
@@ -4410,14 +4416,16 @@ class Reader(Reader1):
             self.unread(self.cursor)
             self.cursor = save_cursor
         return result
-    def read_lines(self,count=1):
+
+    def read_lines(self, count=1):
         """Return tuple containing count lines."""
         result = []
         i = 0
         while i < count and not self.eof():
             result.append(self.read())
         return tuple(result)
-    def read_ahead(self,count=1):
+
+    def read_ahead(self, count=1):
         """Same as read_lines() but does not advance the file pointer."""
         result = []
         putback = []
@@ -5235,8 +5243,9 @@ class Column_OLD:
 
 class Table_OLD(AbstractBlock):
     COL_STOP = r"(`|'|\.)"  # RE.
-    ALIGNMENTS = {'`':'left', "'":'right', '.':'center'}
-    FORMATS = ('fixed','csv','dsv')
+    ALIGNMENTS = {'`': 'left', "'": 'right', '.': 'center'}
+    FORMATS = ('fixed', 'csv', 'dsv')
+
     def __init__(self):
         AbstractBlock.__init__(self)
         self.CONF_ENTRIES += ('template','fillchar','format','colspec',
