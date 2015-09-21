@@ -227,29 +227,6 @@ class Message:
         self.error('unsafe: '+msg)
 
 
-def xopen(fname, mode='r', encoding=None):
-    """Python 3 file open adapter -- adds given or suitable encoding.
-
-    In the text mode, Python 3 always uses encoding for reading and writing
-    because the read or written data is of str type (that is UNICODE).
-    """
-    assert 'b' not in mode
-
-    if encoding is None:
-        encoding = document.attributes.get('encoding')
-        ##print('Explicit encoding from the document:', encoding)
-
-    if encoding is None:
-        # The {encoding} was not specified in the document.
-        # The default encoding for reading is 'utf-8-sig' (skips the BOM
-        # automatically), and 'utf-8' for writing (no BOM).
-        if 'r' in mode:
-            encoding = 'utf-8-sig'
-        else:
-            encoding = 'utf-8'
-    return open(fname, mode=mode, encoding=encoding)
-
-
 def userdir():
     """
     Return user's home directory or None if it is not defined.
@@ -924,7 +901,7 @@ def system(name, args, is_macro=False, attrs=None):
                 message.warning('%s: non-zero exit status' % syntax)
             try:
                 if os.path.isfile(tmp):
-                    f = xopen(tmp)
+                    f = open(tmp, 'r', encoding=document.attributes['encoding'])
                     try:
                         lines = [s.rstrip() for s in f]
                     finally:
@@ -997,7 +974,7 @@ def system(name, args, is_macro=False, attrs=None):
         elif not is_safe_file(args):
             message.unsafe(syntax)
         else:
-            f = xopen(args)
+            f = open(args, 'r', encoding=document.attributes['encoding'])
             try:
                 result = [s.rstrip() for s in f]
             finally:
@@ -4136,7 +4113,7 @@ class Reader1:
         self.fname = None       # Input file name.
         self.next = []          # Read ahead buffer containing
                                 # (filename, linenumber, linetext) tuples.
-        self.cursor = None      # Last read() [filename, linenumber, linetext].
+        self.cursor = None      # Last read() (filename, linenumber, linetext).
         self.tabsize = 8        # Tab expansion number of spaces.
         self.parent = None      # Included reader's parent reader.
         self._lineno = 0        # The last line read from file object f.
@@ -4244,7 +4221,7 @@ class Reader1:
                                 message.verbose('include1: ' + fname, linenos=False)
                                 # Store the include file in memory for later
                                 # retrieval by the {include1:} system attribute.
-                                f = xopen(fname)
+                                f = open(fname, 'r', encoding=document.attributes['encoding'])
                                 try:
                                     config.include1[fname] = [
                                         s.rstrip() for s in f]
@@ -4500,8 +4477,11 @@ class Writer:
         if fname == '<stdout>':
             self.f = sys.stdout
         else:
-            self.f = xopen(fname, 'w')
-        message.verbose('writing: '+writer.fname,False)
+            encoding = document.attributes['encoding']
+            if encoding == 'utf-8-sig':
+                encoding = 'utf-8'
+            self.f = open(fname, 'w', encoding=encoding)
+        message.verbose('writing: ' + writer.fname, False)
         self.lines_out = 0
 
     def close(self):
