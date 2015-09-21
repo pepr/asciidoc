@@ -4141,7 +4141,7 @@ class Reader1:
         self.parent = None      # Included reader's parent reader.
         self._lineno = 0        # The last line read from file object f.
         self.current_depth = 0  # Current include depth.
-        self.max_depth = 10     # Initial maxiumum allowed include depth.
+        self.max_depth = 10     # Initial maximum allowed include depth.
         self.infile = None      # Saved document 'infile' attribute.
         self.indir = None       # Saved document 'indir' attribute.
 
@@ -4153,7 +4153,13 @@ class Reader1:
             self.infile = None
             self.indir = None
         else:
-            self.f = xopen(fname)
+            # The file must be open in binary mode, because the content
+            # is read to buffer ahead of processing. In the text mode,
+            # the buffer is decoded using the given encoding. It means more
+            # lines are decoded before they are iterated. This way it is
+            # not possible to avoid decoding the buffer using wrong encoding
+            # if the line contains `:encoding: ...`.
+            self.f = open(fname, 'rb')
             self.infile = fname
             self.indir = os.path.dirname(fname)
         document.attributes['infile'] = self.infile
@@ -4179,7 +4185,9 @@ class Reader1:
         """
         # Top up buffer.
         if len(self.next) <= self.READ_BUFFER_MIN:
-            s = self.f.readline()
+            linebin = self.f.readline()     # line as binary type
+            encoding = document.attributes.get('encoding', 'utf-8-sig')
+            s = linebin.decode(encoding)
             if s:
                 self._lineno = self._lineno + 1
             while s:
@@ -4189,7 +4197,16 @@ class Reader1:
                 self.next.append((self.fname, self._lineno, s))
                 if len(self.next) > self.READ_BUFFER_MIN:
                     break
-                s = self.f.readline()
+                linebin = self.f.readline()     # line as binary type
+                encoding = document.attributes.get('encoding', 'utf-8-sig')
+                s = linebin.decode(encoding)
+                if s.startswith(':encoding:'):
+                    #???PP this is quick hack and should be improved
+                    # (it may not be systematic). When encoding attribute
+                    # is found in the source code, the encoding is set
+                    # to the document.attributes.
+                    encoding = s[1:].split(':', 1)[1].strip()
+                    document.attributes['encoding'] = encoding
                 if s:
                     self._lineno = self._lineno + 1
         # Return first (oldest) buffer entry.
