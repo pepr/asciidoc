@@ -6,6 +6,7 @@ Copyright (C) 2002-2010 Stuart Rackham. Free use of this software is granted
 under the terms of the GNU General Public License (GPL).
 """
 
+import collections
 import copy
 import sys
 import os
@@ -46,53 +47,6 @@ OR, AND = ',', '+'              # Attribute list separators.
 #---------------------------------------------------------------------------
 
 class EAsciiDoc(Exception): pass
-
-class OrderedDict(dict):
-    """
-    Dictionary ordered by insertion order.
-    Python Cookbook: Ordered Dictionary, Submitter: David Benjamin.
-    http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/107747
-    """
-    def __init__(self, d=None, **kwargs):
-        self._keys = []
-        if d is None: d = kwargs
-        dict.__init__(self, d)
-    def __delitem__(self, key):
-        dict.__delitem__(self, key)
-        self._keys.remove(key)
-    def __setitem__(self, key, item):
-        dict.__setitem__(self, key, item)
-        if key not in self._keys: self._keys.append(key)
-    def clear(self):
-        dict.clear(self)
-        self._keys = []
-    def copy(self):
-        d = dict.copy(self)
-        d._keys = self._keys[:]
-        return d
-    def items(self):
-        return zip(self._keys, self.values())
-    def keys(self):
-        return self._keys
-    def popitem(self):
-        try:
-            key = self._keys[-1]
-        except IndexError:
-            raise KeyError('dictionary is empty')
-        val = self[key]
-        del self[key]
-        return (key, val)
-    def setdefault(self, key, failobj = None):
-        dict.setdefault(self, key, failobj)
-        if key not in self._keys: self._keys.append(key)
-    def update(self, d=None, **kwargs):
-        if d is None:
-            d = kwargs
-        dict.update(self, d)
-        for key in d.keys():
-            if key not in self._keys: self._keys.append(key)
-    def values(self):
-        return map(self.get, self._keys)
 
 class AttrDict(dict):
     """
@@ -2318,32 +2272,33 @@ class AbstractBlock:
 
     def __init__(self):
         # Configuration parameter names common to all blocks.
-        self.CONF_ENTRIES = ('delimiter','options','subs','presubs','postsubs',
-                             'posattrs','style','.*-style','template','filter')
-        self.start = None   # File reader cursor at start delimiter.
-        self.defname=None   # Configuration file block definition section name.
+        self.CONF_ENTRIES = ('delimiter', 'options', 'subs', 'presubs', 'postsubs',
+                             'posattrs', 'style', '.*-style', 'template', 'filter')
+        self.start = None       # File reader cursor at start delimiter.
+        self.defname = None     # Configuration file block definition section name.
         # Configuration parameters.
-        self.delimiter=None # Regular expression matching block delimiter.
-        self.delimiter_reo=None # Compiled delimiter.
-        self.template=None  # template section entry.
-        self.options=()     # options entry list.
-        self.presubs=None   # presubs/subs entry list.
-        self.postsubs=()    # postsubs entry list.
-        self.filter=None    # filter entry.
-        self.posattrs=()    # posattrs entry list.
-        self.style=None     # Default style.
-        self.styles=OrderedDict() # Each entry is a styles dictionary.
+        self.delimiter = None   # Regular expression matching block delimiter.
+        self.delimiter_reo = None # Compiled delimiter.
+        self.template = None    # template section entry.
+        self.options = ()       # options entry list.
+        self.presubs = None     # presubs/subs entry list.
+        self.postsubs = ()      # postsubs entry list.
+        self.filter = None      # filter entry.
+        self.posattrs = ()      # posattrs entry list.
+        self.style = None       # Default style.
+        self.styles = collections.OrderedDict() # Each entry is a styles dictionary.
         # Before a block is processed it's attributes (from it's
         # attributes list) are merged with the block configuration parameters
         # (by self.merge_attributes()) resulting in the template substitution
         # dictionary (self.attributes) and the block's processing parameters
         # (self.parameters).
-        self.attributes={}
+        self.attributes = {}
         # The names of block parameters.
-        self.PARAM_NAMES=('template','options','presubs','postsubs','filter')
-        self.parameters=None
+        self.PARAM_NAMES = ('template', 'options', 'presubs', 'postsubs', 'filter')
+        self.parameters = None
         # Leading delimiter match object.
-        self.mo=None
+        self.mo = None
+
     def short_name(self):
         """ Return the text following the first dash in the section name."""
         i = self.defname.find('-')
@@ -3522,7 +3477,7 @@ class Table(AbstractBlock):
         import io
         import csv
         rows = []
-        rdr = csv.reader(io.StringIO('\r\n'.join(text)),
+        rdr = csv.reader(io.StringIO('\n'.join(text)),
                      delimiter=self.parameters.separator, skipinitialspace=True)
         try:
             for row in rdr:
@@ -4539,7 +4494,7 @@ class Config:
             r'tabletags-.+',r'listtags-.+','replacements[23]',
             r'old_tabledef-.+')
     def __init__(self):
-        self.sections = OrderedDict()   # Keyed by section name containing
+        self.sections = collections.OrderedDict()   # Keyed by section name containing
                                         # lists of section lines.
         # Command-line options.
         self.verbose = False
@@ -4557,13 +4512,13 @@ class Config:
         self.tags = {}          # Values contain (stag,etag) tuples.
         self.specialchars = {}  # Values of special character substitutions.
         self.specialwords = {}  # Name is special word pattern, value is macro.
-        self.replacements = OrderedDict()   # Key is find pattern, value is
-                                            #replace pattern.
-        self.replacements2 = OrderedDict()
-        self.replacements3 = OrderedDict()
+        self.replacements = collections.OrderedDict()   # Key is find pattern, value is
+                                                        # replace pattern.
+        self.replacements2 = collections.OrderedDict()
+        self.replacements3 = collections.OrderedDict()
         self.specialsections = {} # Name is special section name pattern, value
                                   # is corresponding section name.
-        self.quotes = OrderedDict()    # Values contain corresponding tag name.
+        self.quotes = collections.OrderedDict() # Values contain corresponding tag name.
         self.fname = ''         # Most recently loaded configuration file name.
         self.conf_attrs = {}    # Attributes entries from conf files.
         self.cmd_attrs = {}     # Attributes from command-line -a options.
@@ -4638,7 +4593,7 @@ class Config:
         message.linenos = None
         self.fname = fname
         reo = re.compile(r'(?u)^\[(?P<section>\+?[^\W\d][\w-]*)\]\s*$')
-        sections = OrderedDict()
+        sections = collections.OrderedDict()
         section,contents = '',[]
         while not rdr.eof():
             s = rdr.read()
@@ -5038,7 +4993,7 @@ class Config:
 
     def parse_replacements(self,sect='replacements'):
         """Parse replacements section into self.replacements dictionary."""
-        d = OrderedDict()
+        d = collections.OrderedDict()
         parse_entries(self.sections.get(sect,()), d, unquote=True)
         for pat,rep in d.items():
             if not self.set_replacement(pat, rep, getattr(self,sect)):
