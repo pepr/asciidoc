@@ -6,7 +6,16 @@ Copyright (C) 2002-2010 Stuart Rackham. Free use of this software is granted
 under the terms of the GNU General Public License (GPL).
 """
 
-import sys, os, re, time, traceback, tempfile, subprocess, codecs, locale, unicodedata, copy
+import copy
+import sys
+import os
+import re
+import time
+import traceback
+import tempfile
+import subprocess
+import unicodedata
+
 
 ### Used by asciidocapi.py ###
 VERSION = '8.6.9 python3 alpha1'           # See CHANGELOG file for version history.
@@ -20,13 +29,13 @@ DEFAULT_BACKEND = 'html'
 DEFAULT_DOCTYPE = 'article'
 # Allowed substitution options for List, Paragraph and DelimitedBlock
 # definition subs entry.
-SUBS_OPTIONS = ('specialcharacters','quotes','specialwords',
-    'replacements', 'attributes','macros','callouts','normal','verbatim',
-    'none','replacements2','replacements3')
+SUBS_OPTIONS = ('specialcharacters', 'quotes', 'specialwords',
+    'replacements', 'attributes', 'macros', 'callouts', 'normal', 'verbatim',
+    'none', 'replacements2', 'replacements3')
 # Default value for unspecified subs and presubs configuration file entries.
-SUBS_NORMAL = ('specialcharacters','quotes','attributes',
-    'specialwords','replacements','macros','replacements2')
-SUBS_VERBATIM = ('specialcharacters','callouts')
+SUBS_NORMAL = ('specialcharacters', 'quotes', 'attributes',
+    'specialwords', 'replacements', 'macros', 'replacements2')
+SUBS_VERBATIM = ('specialcharacters', 'callouts')
 
 NAME_RE = r'(?u)[^\W\d][-\w]*'  # Valid section or attribute name.
 OR, AND = ',', '+'              # Attribute list separators.
@@ -131,9 +140,9 @@ class Trace:
     Used in conjunction with the 'trace' attribute to generate diagnostic
     output. There is a single global instance of this class named trace.
     """
-    SUBS_NAMES = ('specialcharacters','quotes','specialwords',
-                  'replacements', 'attributes','macros','callouts',
-                  'replacements2','replacements3')
+    SUBS_NAMES = ('specialcharacters', 'quotes', 'specialwords',
+                  'replacements', 'attributes', 'macros', 'callouts',
+                  'replacements2', 'replacements3')
     def __init__(self):
         self.name_re = ''        # Regexp pattern to match trace names.
         self.linenos = True
@@ -1242,51 +1251,19 @@ def column_width(text):
         return len(text)
 
 def time_str(t):
-    """Convert seconds since the Epoch to formatted local time string."""
-    t = time.localtime(t)
-    s = time.strftime('%H:%M:%S',t)
-    if time.daylight and t.tm_isdst == 1:
-        result = s + ' ' + time.tzname[1]
-    else:
-        result = s + ' ' + time.tzname[0]
+    """Convert seconds since the Epoch to formatted local time string.
 
-    # Because of the bug in Windows libraries, Python 3.3 tried to work around
-    # some issues. However, the shit hit the fan, and the bug bubbled here.
-    # The `time.tzname` elements are (unicode) strings; however, they were
-    # filled with bad content. See https://bugs.python.org/issue16322 for details.
-    # Actually, wrong characters were passed instead of the good ones.
-    # This code should be skipped later by versions of Python that will fix
-    # the issue.
-    import platform
-    if platform.system() == 'Windows':
-        # The concrete example for Czech locale:
-        # - cp1250 (windows-1250) is used as native encoding
-        # - the time.tzname[0] should start with 'Střední Evropa'
-        # - the ascii('Střední Evropa') should return "'St\u0159edn\xed Evropa'"
-        # - because of the bug it returns "'St\xf8edn\xed Evropa'"
-        #
-        # The 'ř' character has unicode code point `\u0159` (that is hex)
-        # and the `\xF8` code in cp1250. The `\xF8` was wrongly used
-        # as a Unicode code point `\u00F8` -- this is for the Unicode
-        # character 'ø' that is observed in the string.
-        #
-        # To fix it, the `result` string must be reinterpreted with a different
-        # encoding. When working with Python 3 strings, it can probably
-        # done only through the string representation and `eval()`. Here
-        # the `eval()` is not very dangerous because the string was obtained
-        # from the OS library, and the values are limited to certain subset.
-        #
-        # The `ascii()` literal is prefixed by `binary` type prefix character,
-        # `eval`uated, and the binary result is decoded to the correct string.
-        local_encoding = locale.getdefaultlocale()[1]
-        b = eval('b' + ascii(result))
-        result = b.decode(local_encoding)
-    return result
+    The earlier approach that uses time.tzname[x] cannot be used because
+    of the issue with Windows + Python 3.3+ (http://bugs.python.org/issue16322).
+    """
+    import locale
+    locale.setlocale(locale.LC_CTYPE, '')
+    return time.strftime('%H:%M:%S %Z', time.localtime(t))
 
 def date_str(t):
     """Convert seconds since the Epoch to formatted local date string."""
     t = time.localtime(t)
-    return time.strftime('%Y-%m-%d',t)
+    return time.strftime('%Y-%m-%d', t)
 
 
 class Lex:
@@ -4437,7 +4414,8 @@ class Reader(Reader1):
         return tuple(result)
     def skip_blank_lines(self):
         reader.read_until(r'\s*\S+')
-    def read_until(self,terminators,same_file=False):
+
+    def read_until(self, terminators, same_file=False):
         """Like read() but reads lines up to (but not including) the first line
         that matches the terminator regular expression, regular expression
         object or list of regular expression objects. If same_file is True then
@@ -5530,7 +5508,7 @@ class Table_OLD(AbstractBlock):
         import io
         import csv
         result = []
-        rdr = csv.reader(io.StringIO('\r\n'.join(rows)),
+        rdr = csv.reader(io.StringIO('\n'.join(rows)),
             skipinitialspace=True)
         try:
             for row in rdr:
