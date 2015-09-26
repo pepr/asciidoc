@@ -4043,7 +4043,7 @@ class Reader1:
     def __init__(self):
         self.f = None           # Input file object.
         self.fname = None       # Input file name.
-        self.next = []          # Read ahead buffer containing
+        self.linebuffer = []    # Read ahead buffer containing
                                 # (filename, linenumber, linetext) tuples.
         self.cursor = None      # Last read() (filename, linenumber, linetext).
         self.tabsize = 8        # Tab expansion number of spaces.
@@ -4074,12 +4074,12 @@ class Reader1:
         document.attributes['infile'] = self.infile
         document.attributes['indir'] = self.indir
         self._lineno = 0            # The last line read from file object f.
-        self.next = []
+        self.linebuffer = []
 
     def closefile(self):
         """Used by class methods to close nested include files."""
         self.f.close()
-        self.next = []
+        self.linebuffer = []
 
     def close(self):
         self.closefile()
@@ -4089,39 +4089,38 @@ class Reader1:
         """Read and proces the next line.
 
         Return None if EOF. Expand tabs. Strip trailing white space.
-        Maintain self.next read ahead buffer. If skip=True then
+        The rstrip() is done while the line is in the bytes form
+        to avoid complications with different line endings in different OSes.
+
+        If :encoding: found, change it. Decode the line from
+
+        Maintain self.linebuffer read ahead buffer. If skip=True then
         conditional exclusion is active (ifdef and ifndef macros).
         """
         # Top up buffer.
-        if len(self.next) <= self.READ_BUFFER_MIN:
-            linebin = self.f.readline()     # line as binary type
-            encoding = document.attributes.get('encoding', 'utf-8-sig')
-            s = linebin.decode(encoding)
-            if s:
+        if len(self.linebuffer) <= self.READ_BUFFER_MIN:
+            linebin = self.f.readline()     # line as bytes type
+            while linebin:                  # while not EOF
                 self._lineno = self._lineno + 1
-            while s:
-                if self.tabsize != 0:
-                    s = s.expandtabs(self.tabsize)
-                s = s.rstrip()
-                self.next.append((self.fname, self._lineno, s))
-                if len(self.next) > self.READ_BUFFER_MIN:
-                    break
-                linebin = self.f.readline()     # line as binary type
+                linebin = linebin.rstrip()  # strip trailing spaces and line-end sequences
                 encoding = document.attributes.get('encoding', 'utf-8-sig')
-                s = linebin.decode(encoding)
+                s = linebin.decode(encoding)    # line as (unicode) string
+                # If the line itself defines encoding for the next lines,
+                # capture the encoding. ???PP this is quick hack and should be improved.
                 if s.startswith(':encoding:'):
-                    #???PP this is quick hack and should be improved
-                    # (it may not be systematic). When encoding attribute
-                    # is found in the source code, the encoding is set
-                    # to the document.attributes.
                     encoding = s[1:].split(':', 1)[1].strip()
                     document.attributes['encoding'] = encoding
-                if s:
-                    self._lineno = self._lineno + 1
+                if self.tabsize != 0:
+                    s = s.expandtabs(self.tabsize)
+                self.linebuffer.append((self.fname, self._lineno, s))
+                if len(self.linebuffer) > self.READ_BUFFER_MIN:
+                    break
+                linebin = self.f.readline() # get ready for the next loop
+
         # Return first (oldest) buffer entry.
-        if len(self.next) > 0:
-            self.cursor = self.next[0]
-            del self.next[0]
+        if len(self.linebuffer) > 0:
+            self.cursor = self.linebuffer[0]
+            del self.linebuffer[0]
             result = self.cursor[2]
             # Check for include macro.
             mo = macros.match('+', r'^include[1]?$', result)
@@ -4201,7 +4200,7 @@ class Reader1:
 
     def eof(self):
         """Returns True if all lines have been read."""
-        if len(self.next) == 0:
+        if len(self.linebuffer) == 0:
             # End of current file.
             if self.parent:
                 self.closefile()
@@ -4219,13 +4218,13 @@ class Reader1:
         if Reader1.eof(self):
             return None
         else:
-            return self.next[0][2]
+            return self.linebuffer[0][2]
 
     def unread(self, cursor):
         """Push the line (filename, linenumber, linetext) tuple back into the read
         buffer. Note that it's up to the caller to restore the previous cursor."""
         assert cursor
-        self.next.insert(0, cursor)
+        self.linebuffer.insert(0, cursor)
 
 class Reader(Reader1):
     """ Wraps (well, sought of) Reader1 class and implements conditional text
@@ -4422,6 +4421,8 @@ class Writer:
             self.f.close()
     def write_line(self, line=None):
         if not (self.skip_blank_lines and (not line or not line.strip())):
+            if line:                    ##
+                print(repr(line))       ##
             self.f.write((line or '') + self.newline)
             self.lines_out = self.lines_out + 1
     def write(self,*args,**kwargs):
