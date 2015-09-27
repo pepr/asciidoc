@@ -1846,7 +1846,7 @@ class AttributeEntry:
                 attr.subs = parse_options(attr.subs, SUBS_OPTIONS,
                             'illegal substitution option')
                 attr.value = Lex.subs((attr.value,), attr.subs)
-                attr.value = writer.newline.join(attr.value)
+                attr.value = '\n'.join(attr.value)
                 document.attributes[attr.name] = attr.value
             elif attr.name in document.attributes:
                 del document.attributes[attr.name]
@@ -4402,7 +4402,6 @@ class Reader(Reader1):
 class Writer:
     """Writes lines to output file."""
     def __init__(self):
-        self.newline = '\n'              # End of line terminator.
         self.f = None                    # Output file object.
         self.fname = None                # Output file name.
         self.lines_out = 0               # Number of lines written.
@@ -4425,12 +4424,12 @@ class Writer:
             self.f.close()
     def write_line(self, line=None):
         if not (self.skip_blank_lines and (not line or not line.strip())):
-            self.f.write((line or '') + self.newline)
+            self.f.write((line or '') + '\n')
             self.lines_out = self.lines_out + 1
     def write(self,*args,**kwargs):
         """Iterates arguments, writes tuple and list arguments one line per
         element, else writes argument as single line. If no arguments writes
-        blank line. If argument is None nothing is written. self.newline is
+        blank line. If argument is None nothing is written. '\n' is
         appended to each line."""
         if 'trace' in kwargs and len(args) > 0:
             trace(kwargs['trace'],args[0])
