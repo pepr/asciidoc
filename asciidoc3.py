@@ -4030,6 +4030,8 @@ class CalloutMap:
 # Input stream Reader and output stream writer classes.
 #---------------------------------------------------------------------------
 
+UTF8_BOM = b'\xef\xbb\xbf'
+
 class Reader1:
     """Line oriented AsciiDoc input file reader.
 
@@ -4040,7 +4042,7 @@ class Reader1:
     """
     READ_BUFFER_MIN = 10        # Read buffer low level.
 
-    def __init__(self):
+    def __init__(self, forced_encoding=None):
         self.f = None           # Input file object.
         self.fname = None       # Input file name.
         self.linebuffer = []    # Read ahead buffer containing
@@ -4053,6 +4055,7 @@ class Reader1:
         self.max_depth = 10     # Initial maximum allowed include depth.
         self.infile = None      # Saved document 'infile' attribute.
         self.indir = None       # Saved document 'indir' attribute.
+        self.forced_encoding = forced_encoding
 
     def open(self, fname):
         self.fname = fname
@@ -4089,41 +4092,42 @@ class Reader1:
         """Read and proces the next line.
 
         Return None if EOF. Expand tabs. Strip trailing white space.
-        The rstrip() is done while the line is in the bytes form
-        to avoid complications with different line endings in different OSes.
-
-        If :encoding: found, change it. Decode the line from
 
         Maintain self.linebuffer read ahead buffer. If skip=True then
         conditional exclusion is active (ifdef and ifndef macros).
         """
         # Top up buffer.
         if len(self.linebuffer) <= self.READ_BUFFER_MIN:
-            linebin = self.f.readline()     # line as bytes type
-            while linebin:                  # while not EOF
+            linebytes = self.f.readline()     # line as bytes type
+            if self.forced_encoding:
+                encoding = self.forced_encoding
+            elif self._lineno == 0 and linebytes.startswith(UTF8_BOM):
+                encoding = 'utf-8-sig'
+            else:
+                encoding = document.attributes.get('encoding', 'utf-8')
+
+            while linebytes:                  # while not EOF
                 self._lineno = self._lineno + 1
-                linebin = linebin.rstrip()  # strip trailing spaces and line-end sequences
-                encoding = document.attributes.get('encoding', 'utf-8-sig')
-                s = linebin.decode(encoding)    # line as (unicode) string
+                s = linebytes.decode(encoding)    # line as (unicode) string
+                s = s.rstrip()  # strip trailing spaces and line-end sequences
                 # If the line itself defines encoding for the next lines,
                 # capture the encoding. ???PP this is quick hack and should be improved.
                 if s.startswith(':encoding:'):
-                    encoding = s[1:].split(':', 1)[1].strip()
+                    encoding = s.split(':')[2].strip()
                     document.attributes['encoding'] = encoding
                 if self.tabsize != 0:
                     s = s.expandtabs(self.tabsize)
                 self.linebuffer.append((self.fname, self._lineno, s))
                 if len(self.linebuffer) > self.READ_BUFFER_MIN:
                     break
-                linebin = self.f.readline() # get ready for the next loop
+                linebytes = self.f.readline() # get ready for the next loop
 
         # Return first (oldest) buffer entry.
         if len(self.linebuffer) > 0:
-            self.cursor = self.linebuffer[0]
-            del self.linebuffer[0]
-            result = self.cursor[2]
+            self.cursor = self.linebuffer.pop(0)
+            line = self.cursor[2]
             # Check for include macro.
-            mo = macros.match('+', r'^include[1]?$', result)
+            mo = macros.match('+', r'^include[1]?$', line)
             if mo and not skip:
                 # Parse include macro attributes.
                 attrs = {}
@@ -4132,7 +4136,7 @@ class Reader1:
                 # Don't process include macro once the maximum depth is reached.
                 if self.current_depth >= self.max_depth:
                     message.warning('maximum include depth exceeded')
-                    return result
+                    return line
                 # Perform attribute substitution on include macro file name.
                 fname = subs_attrs(mo.group('target'))
                 if not fname:
@@ -4162,7 +4166,7 @@ class Reader1:
                         else:
                             # This is a configuration dump, just pass the macro
                             # call through.
-                            return result
+                            return line
                 # Clone self and set as parent (self assumes the role of child).
                 parent = Reader1()
                 assign(parent, self)
@@ -4190,13 +4194,13 @@ class Reader1:
                 message.verbose('include: ' + fname, linenos=False)
                 self.open(fname)
                 self.current_depth = self.current_depth + 1
-                result = Reader1.read(self)
+                line = Reader1.read(self)
         else:
             if not Reader1.eof(self):
-                result = Reader1.read(self)
+                line = Reader1.read(self)
             else:
-                result = None
-        return result
+                line = None
+        return line
 
     def eof(self):
         """Returns True if all lines have been read."""
@@ -4231,8 +4235,8 @@ class Reader(Reader1):
     inclusion.
     """
 
-    def __init__(self):
-        Reader1.__init__(self)
+    def __init__(self, forced_encoding=None):
+        Reader1.__init__(self, forced_encoding)
         self.depth = 0          # if nesting depth.
         self.skip = False       # true if we're skipping ifdef...endif.
         self.skipname = ''      # Name of current endif macro target.
@@ -4421,8 +4425,6 @@ class Writer:
             self.f.close()
     def write_line(self, line=None):
         if not (self.skip_blank_lines and (not line or not line.strip())):
-            if line:                    ##
-                print(repr(line))       ##
             self.f.write((line or '') + self.newline)
             self.lines_out = self.lines_out + 1
     def write(self,*args,**kwargs):
@@ -4588,7 +4590,7 @@ class Config:
         # same if the source file is in the application directory).
         if os.path.realpath(fname) in self.loaded:
             return True
-        rdr = Reader()  # Reader processes system macros.
+        rdr = Reader('utf-8')  # Reader processes system macros.
         message.linenos = False         # Disable document line numbers.
         rdr.open(fname)
         message.linenos = None
