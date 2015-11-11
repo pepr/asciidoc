@@ -204,7 +204,7 @@ def localapp():
     Return True if we are not executing the system wide version
     i.e. the configuration is in the executable's directory.
     """
-    return os.path.isfile(os.path.join(APP_DIR, 'asciidoc.conf'))
+    return os.path.isfile(os.path.join(APP_DIR, 'asciidoc3.conf'))
 
 def file_in(fname, directory):
     """Return True if file fname resides inside directory."""
@@ -1403,9 +1403,9 @@ class Document:
         self.attributes['asciidoc-file'] = APP_FILE
         self.attributes['asciidoc-dir'] = APP_DIR
         if localapp():
-            self.attributes['asciidoc-confdir'] = APP_DIR
+            self.attributes['asciidoc3.confdir'] = APP_DIR
         else:
-            self.attributes['asciidoc-confdir'] = CONF_DIR
+            self.attributes['asciidoc3.confdir'] = CONF_DIR
         self.attributes['user-dir'] = USER_DIR
         if config.verbose:
             self.attributes['verbose'] = ''
@@ -5911,16 +5911,16 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             if o == '-v': config.verbose = True
         document.update_attributes()
         if '-e' not in options:
-            # Load asciidoc.conf files in two passes: the first for attributes
+            # Load asciidoc3.conf files in two passes: the first for attributes
             # the second for everything. This is so that locally set attributes
-            # available are in the global asciidoc.conf
-            if not config.load_from_dirs('asciidoc.conf',include=['attributes']):
-                raise EAsciiDoc('configuration file asciidoc.conf missing')
+            # available are in the global asciidoc3.conf
+            if not config.load_from_dirs('asciidoc3.conf',include=['attributes']):
+                raise EAsciiDoc('configuration file asciidoc3.conf missing')
             load_conffiles(include=['attributes'])
-            config.load_from_dirs('asciidoc.conf')
+            config.load_from_dirs('asciidoc3.conf')
             if infile != '<stdin>':
                 indir = os.path.dirname(infile)
-                config.load_file('asciidoc.conf', indir,
+                config.load_file('asciidoc3.conf', indir,
                                 include=['attributes','titles','specialchars'])
         else:
             load_conffiles(include=['attributes','titles','specialchars'])
@@ -5955,7 +5955,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             document.load_lang()
             if infile != '<stdin>':
                 # Load local conf files (files in the source file directory).
-                config.load_file('asciidoc.conf', indir)
+                config.load_file('asciidoc3.conf', indir)
                 config.load_backend([indir])
                 config.load_filters([indir])
                 # Load document specific configuration files.
@@ -5996,7 +5996,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         # Set the default embedded icons directory.
         if 'data-uri' in  document.attributes and not os.path.isdir(document.attributes['iconsdir']):
             document.attributes['iconsdir'] = os.path.join(
-                     document.attributes['asciidoc-confdir'], 'images/icons')
+                     document.attributes['asciidoc3.confdir'], 'images/icons')
         # Configuration is fully loaded.
         config.expand_all_templates()
         # Check configuration for consistency.
