@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 USAGE = '''Usage: testasciidoc.py [OPTIONS] COMMAND
 
@@ -88,13 +88,13 @@ def mock_localtime(f, _localtime=time.localtime):
     def generate_expected(self, backend):
         time.localtime = _frozen_localtime
         os.environ['TZ'] = _frozentz
-        time.tzset()
+        ##???time.tzset()
         try:
             return f(self, backend)
         finally:
             time.localtime = _localtime
             del os.environ['TZ']
-            time.tzset()
+            ##???time.tzset()
     return generate_expected
 
 
@@ -186,7 +186,7 @@ class AsciiDocTest(object):
         """
         Return expected test data output for backend.
         """
-        f = open(self.backend_filename(backend))
+        f = open(self.backend_filename(backend), encoding='utf-8')  ##??? encoding
         try:
             result = f.readlines()
             # Strip line terminators.
@@ -200,7 +200,7 @@ class AsciiDocTest(object):
         """
         Generate and return test data output for backend.
         """
-        asciidoc = asciidocapi.AsciiDocAPI()
+        asciidoc = asciidocapi3.AsciiDocAPI()
         asciidoc.options.values = self.options
         asciidoc.attributes = self.attributes
         infile = self.source
