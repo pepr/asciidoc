@@ -30,7 +30,7 @@ if sys.platform[:4] == 'java':
 else:
     import io
 
-import asciidocapi
+import asciidocapi3
 
 
 BACKENDS = ('html4','xhtml11','docbook','html5')    # Default backends.
