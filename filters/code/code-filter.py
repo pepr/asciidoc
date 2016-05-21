@@ -172,7 +172,7 @@ def code_filter():
                     + stag + line[pos:] + etag
             else:
                 line = re.sub(r'\b(?P<word>\w+)\b',sub_keyword,line)
-        sys.stdout.write(line + os.linesep)
+        print(line)
         line = sys.stdin.readline()
 
 def usage(msg=''):
@@ -193,7 +193,7 @@ def main():
         sys.exit(1)
     for o,v in opts:
         if o in ('--help','-h'):
-            print __doc__
+            print(__doc__)
             sys.exit(0)
         if o in ('--version','-v'):
             print('code-filter version %s' % (VERSION,))
