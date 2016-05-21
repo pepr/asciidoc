@@ -50,7 +50,7 @@ COPYING
     granted under the terms of the GNU General Public License (GPL).
 '''
 
-import os, sys, re, string
+import os, sys, re
 
 VERSION = '1.1.2'
 
@@ -138,12 +138,12 @@ def code_filter():
     tag_comment = 0 # True if we should tag the current line as a comment.
     line = sys.stdin.readline()
     while line:
-        line = string.rstrip(line)
-        line = string.expandtabs(line,tabsize)
+        line = line.rstrip()
+        line = line.expandtabs(tabsize)
         # Escape special characters.
-        line = string.replace(line,'&','&amp;')
-        line = string.replace(line,'<','&lt;')
-        line = string.replace(line,'>','&gt;')
+        line = line.replace('&','&amp;')
+        line = line.replace('<','&lt;')
+        line = line.replace('>','&gt;')
         # Process block comment.
         if blk_comment:
             if in_comment:
@@ -163,7 +163,7 @@ def code_filter():
             if line: line = stag+line+etag
         else:
             if inline_comment:
-                pos = string.find(line,inline_comment)
+                pos = line.find(inline_comment)
             else:
                 pos = -1
             if pos >= 0:
@@ -200,7 +200,7 @@ def main():
             sys.exit(0)
         if o == '-b': backend = v
         if o == '-l':
-            v = string.lower(v)
+            v = v.lower()
             if v == 'c': v = 'c++'
             language = v
         if o == '-t':
