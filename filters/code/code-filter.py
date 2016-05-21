@@ -215,13 +215,13 @@ def main():
     if backend is None:
         usage('backend option is mandatory')
         sys.exit(1)
-    if not keywordtags.has_key(backend):
+    if not backend in keywordtags.keys():
         usage('illegal backend option')
         sys.exit(1)
     if language is None:
         usage('language option is mandatory')
         sys.exit(1)
-    if not keywords.has_key(language):
+    if not language in keywords.keys():
         usage('illegal language option')
         sys.exit(1)
     # Do the work.
