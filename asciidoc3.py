@@ -4130,7 +4130,7 @@ class Reader1:
 
         # Return first (oldest) buffer entry.
         if len(self.linebuffer) > 0:
-            self.cursor = self.linebuffer.pop(0)
+            self.cursor = list(self.linebuffer.pop(0))
             line = self.cursor[2]
             # Check for include macro.
             mo = macros.match('+', r'^include[1]?$', line)
