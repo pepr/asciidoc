@@ -6101,7 +6101,7 @@ def execute(cmd, opts, args):
        >>> opts.append(('--attribute','author=Joe Bloggs'))
        >>> opts.append(('--out-file',outfile))
        >>> execute(__file__, opts, [infile])
-       >>> print outfile.getvalue()
+       >>> print(outfile.getvalue())
        <p>Hello <strong>Joe Bloggs</strong></p>
 
        >>>
