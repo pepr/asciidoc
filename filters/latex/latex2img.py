@@ -114,7 +114,7 @@ def run(cmd):
         cmd += ' 2>%s 1>&2' % os.devnull
     print_verbose('executing: %s' % cmd)
     if os.system(cmd):
-        raise EApp, 'failed command: %s' % cmd
+        raise EApp('failed command: %s' % cmd)
 
 def latex2img(infile, outfile, imgfmt, dpi, modified):
     '''
@@ -123,7 +123,7 @@ def latex2img(infile, outfile, imgfmt, dpi, modified):
     outfile = os.path.abspath(outfile)
     outdir = os.path.dirname(outfile)
     if not os.path.isdir(outdir):
-        raise EApp, 'directory does not exist: %s' % outdir
+        raise EApp('directory does not exist: %s' % outdir)
     texfile = tempfile.mktemp(suffix='.tex', dir=os.path.dirname(outfile))
     basefile = os.path.splitext(texfile)[0]
     dvifile = basefile + '.dvi'
@@ -139,7 +139,7 @@ def latex2img(infile, outfile, imgfmt, dpi, modified):
                 skip = True
     else:
         if not os.path.isfile(infile):
-            raise EApp, 'input file does not exist: %s' % infile
+            raise EApp('input file does not exist: %s' % infile)
         tex = read_file(infile)
         if modified and os.path.isfile(outfile) and \
                 os.path.getmtime(infile) <= os.path.getmtime(outfile):
@@ -245,6 +245,6 @@ if __name__ == "__main__":
         raise
     except KeyboardInterrupt:
         sys.exit(1)
-    except Exception, e:
+    except Exception as e:
         print_stderr("%s: %s" % (os.path.basename(sys.argv[0]), str(e)))
         sys.exit(1)

@@ -90,14 +90,14 @@ def run(cmd):
         cmd += ' 2>%s' % os.devnull
     print_verbose('executing: %s' % cmd)
     if os.system(cmd):
-        raise EApp, 'failed command: %s' % cmd
+        raise EApp('failed command: %s' % cmd)
 
 def music2png(format, infile, outfile, modified):
     '''Convert ABC notation in file infile to cropped PNG file named outfile.'''
     outfile = os.path.abspath(outfile)
     outdir = os.path.dirname(outfile)
     if not os.path.isdir(outdir):
-        raise EApp, 'directory does not exist: %s' % outdir
+        raise EApp('directory does not exist: %s' % outdir)
     basefile = tempfile.mktemp(dir=os.path.dirname(outfile))
     temps = [basefile + ext for ext in ('.abc', '.ly', '.ps', '.midi')]
     skip = False
@@ -113,7 +113,7 @@ def music2png(format, infile, outfile, modified):
                 write_file(filename, checksum, 'wb')
     else:
         if not os.path.isfile(infile):
-            raise EApp, 'input file does not exist: %s' % infile
+            raise EApp('input file does not exist: %s' % infile)
         if modified and os.path.isfile(outfile) and \
                 os.path.getmtime(infile) <= os.path.getmtime(outfile):
             skip = True
@@ -208,6 +208,6 @@ if __name__ == "__main__":
         raise
     except KeyboardInterrupt:
         sys.exit(1)
-    except Exception, e:
+    except Exception as e:
         print_stderr("%s: %s" % (os.path.basename(sys.argv[0]), str(e)))
         sys.exit(1)

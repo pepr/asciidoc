@@ -113,7 +113,7 @@ LICENSE
         else:
             cmd += ' 2>%s' % os.devnull
         if os.system(cmd):
-            raise EApp, 'failed command: %s' % cmd
+            raise EApp('failed command: %s' % cmd)
 
     def graphviz2png(self, infile, outfile):
         '''Convert Graphviz notation in file infile to
@@ -123,7 +123,7 @@ LICENSE
         outdir = os.path.dirname(outfile)
 
         if not os.path.isdir(outdir):
-            raise EApp, 'directory does not exist: %s' % outdir
+            raise EApp('directory does not exist: %s' % outdir)
 
         basefile = os.path.splitext(outfile)[0]
         saved_cwd = os.getcwd()
@@ -151,7 +151,7 @@ LICENSE
             open(infile, 'w').writelines(lines)
 
         if not os.path.isfile(infile):
-            raise EApp, 'input file does not exist: %s' % infile
+            raise EApp('input file does not exist: %s' % infile)
 
         if self.options.outfile is None:
             outfile = os.path.splitext(infile)[0] + '.png'
