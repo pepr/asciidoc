@@ -62,7 +62,7 @@ COPYING
 import warnings
 warnings.simplefilter('ignore',DeprecationWarning)
 
-import os, sys, tempfile, md5
+import os, sys, tempfile, hashlib
 
 VERSION = '0.2.0'
 
@@ -132,7 +132,7 @@ def latex2img(infile, outfile, imgfmt, dpi, modified):
     if infile == '-':
         tex = sys.stdin.read()
         if modified:
-            checksum = md5.new(tex + imgfmt + str(dpi)).digest()
+            checksum = hashlib.md5((tex + imgfmt + str(dpi)).encode()).digest()
             md5_file = os.path.splitext(outfile)[0] + '.md5'
             if os.path.isfile(md5_file) and os.path.isfile(outfile) and \
                     checksum == read_file(md5_file,'rb'):
