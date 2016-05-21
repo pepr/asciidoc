@@ -174,7 +174,7 @@ def main():
     opts,args = getopt.getopt(sys.argv[1:], 'f:o:mhv', ['help','version'])
     for o,v in opts:
         if o in ('--help','-h'):
-            print __doc__
+            print(__doc__)
             sys.exit(0)
         if o =='--version':
             print('music2png version %s' % (VERSION,))
