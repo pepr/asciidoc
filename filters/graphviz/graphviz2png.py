@@ -67,7 +67,7 @@ LICENSE
         # Run dot, get the list of supported formats. It's prefixed by some junk.
         format_output = subprocess.Popen(["dot", "-T?"], stderr=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[1]
         # The junk contains : and ends with :. So we split it, then strip the final endline, then split the list for future usage.
-        supported_formats = format_output.split(": ")[2][:-1].split(" ")
+        supported_formats = format_output.decode('utf-8').split(": ")[2][:-1].split(" ")
 
         if not argv:
             argv = sys.argv
