@@ -24,13 +24,13 @@ VPATH = @srcdir@
 
 ASCIIDOCCONF = $(sysconfdir)/asciidoc
 
-prog = asciidoc.py a2x.py
+prog = asciidoc.py a2x.py asciidoc3.py
 progdir = $(bindir)
 
 manp = $(patsubst %1.txt,%1,$(wildcard doc/*.1.txt))
 manpdir = $(mandir)/man1
 
-conf = $(wildcard *.conf)
+conf = $(wildcard *.conf) base64-pipe.py
 confdir = $(ASCIIDOCCONF)
 
 filtersdir = $(ASCIIDOCCONF)/filters

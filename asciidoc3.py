@@ -21,7 +21,7 @@ import unicodedata
 ### Used by asciidocapi.py ###
 VERSION = '8.6.9 python3 alpha1'           # See CHANGELOG file for version history.
 
-MIN_PYTHON_VERSION = '3.4'  # Require this version of Python or better.
+MIN_PYTHON_VERSION = (3, 4, 0)  # Require this version of Python or better.
 
 #---------------------------------------------------------------------------
 # Program constants.
@@ -2193,6 +2193,9 @@ class Section:
         # Prefix the ID name with idprefix attribute or underscore if not
         # defined. Prefix ensures the ID does not clash with existing IDs.
         idprefix = document.attributes.get('idprefix','_')
+        if isinstance(base_id, bytes):
+            encoding = document.attributes.get('encoding', 'utf-8')
+            base_id = base_id.decode(encoding)
         base_id = idprefix + base_id
         i = 1
         while True:
@@ -4101,14 +4104,17 @@ class Reader1:
             linebytes = self.f.readline()     # line as bytes type
             if self.forced_encoding:
                 encoding = self.forced_encoding
-            elif self._lineno == 0 and linebytes.startswith(UTF8_BOM):
+            elif self._lineno == 0 and isinstance(linebytes, bytes) and linebytes.startswith(UTF8_BOM):
                 encoding = 'utf-8-sig'
             else:
                 encoding = document.attributes.get('encoding', 'utf-8')
 
             while linebytes:                  # while not EOF
                 self._lineno = self._lineno + 1
-                s = linebytes.decode(encoding)    # line as (unicode) string
+                if isinstance(linebytes, bytes):
+                    s = linebytes.decode(encoding) # line as (unicode) string
+                else:
+                    s = linebytes
                 s = s.rstrip()  # strip trailing spaces and line-end sequences
                 # If the line itself defines encoding for the next lines,
                 # capture the encoding. ???PP this is quick hack and should be improved.
@@ -4124,7 +4130,7 @@ class Reader1:
 
         # Return first (oldest) buffer entry.
         if len(self.linebuffer) > 0:
-            self.cursor = self.linebuffer.pop(0)
+            self.cursor = list(self.linebuffer.pop(0))
             line = self.cursor[2]
             # Check for include macro.
             mo = macros.match('+', r'^include[1]?$', line)
@@ -4535,8 +4541,8 @@ class Config:
         directory.
         cmd is the asciidoc command or asciidoc.py path.
         """
-        if float(sys.version[:3]) < float(MIN_PYTHON_VERSION):
-            message.stderr('FAILED: Python %s or better required' %
+        if sys.version_info[:3] < MIN_PYTHON_VERSION:
+            message.stderr('FAILED: Python %s or better. required' %
                     MIN_PYTHON_VERSION)
             sys.exit(1)
         if not os.path.exists(cmd):
@@ -6101,7 +6107,7 @@ def execute(cmd, opts, args):
        >>> opts.append(('--attribute','author=Joe Bloggs'))
        >>> opts.append(('--out-file',outfile))
        >>> execute(__file__, opts, [infile])
-       >>> print outfile.getvalue()
+       >>> print(outfile.getvalue())
        <p>Hello <strong>Joe Bloggs</strong></p>
 
        >>>

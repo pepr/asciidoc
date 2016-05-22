@@ -11,7 +11,7 @@ import sys, os, re, time, traceback, tempfile, subprocess, codecs, locale, unico
 ### Used by asciidocapi.py ###
 VERSION = '8.6.9'           # See CHANGLOG file for version history.
 
-MIN_PYTHON_VERSION = '2.4'  # Require this version of Python or better.
+MIN_PYTHON_VERSION = (2, 4, 0)  # Require this version of Python or better.
 
 #---------------------------------------------------------------------------
 # Program constants.
@@ -4550,7 +4550,7 @@ class Config:
         directory.
         cmd is the asciidoc command or asciidoc.py path.
         """
-        if float(sys.version[:3]) < float(MIN_PYTHON_VERSION):
+        if sys.version_info[:3] < MIN_PYTHON_VERSION:
             message.stderr('FAILED: Python %s or better required' %
                     MIN_PYTHON_VERSION)
             sys.exit(1)

@@ -9,15 +9,22 @@ Email:     srackham@gmail.com
 
 '''
 
+from __future__ import print_function
 import os
 import fnmatch
-import HTMLParser
+import sys
+if sys.version_info[0] == 3:
+	import html.parser as HTMLParser
+else:
+	import HTMLParser
 import re
 import shutil
 import subprocess
-import sys
 import traceback
-import urlparse
+if sys.version_info[0] == 3:
+	import urllib.parse as urlparse
+else:
+	import urlparse
 import zipfile
 import xml.dom.minidom
 import mimetypes
@@ -76,7 +83,7 @@ def warning(msg):
     errmsg('WARNING: %s' % msg)
 
 def infomsg(msg):
-    print '%s: %s' % (PROG,msg)
+    print('%s: %s' % (PROG,msg))
 
 def die(msg, exit_code=1):
     errmsg('ERROR: %s' % msg)
@@ -102,16 +109,16 @@ class AttrDict(dict):
     def __getattr__(self, key):
         try:
             return self[key]
-        except KeyError, k:
+        except KeyError as k:
             if self.has_key('_default'):
                 return self['_default']
             else:
-                raise AttributeError, k
+                raise AttributeError(k)
     def __setattr__(self, key, value):
         self[key] = value
     def __delattr__(self, key):
         try: del self[key]
-        except KeyError, k: raise AttributeError, k
+        except KeyError as  k: raise AttributeError(k)
     def __repr__(self):
         return '<AttrDict ' + dict.__repr__(self) + '>'
     def __getstate__(self):
@@ -220,12 +227,14 @@ def shell(cmd, raise_error=True):
     try:
         popen = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
                 shell=True, env=ENV)
-    except OSError, e:
+    except OSError as e:
         die('failed: %s: %s' % (cmd, e))
     stdoutdata, stderrdata = popen.communicate()
+    if sys.version_info[0] == 3:
+        stdoutdata, stderrdata = stdoutdata.decode('utf-8'), stderrdata.decode('utf-8')
     if OPTIONS.verbose:
-        print stdoutdata
-        print stderrdata
+        print(stdoutdata)
+        print(stderrdata)
     if popen.returncode != 0 and raise_error:
         die('%s returned non-zero exit status %d' % (cmd, popen.returncode))
     return (stdoutdata, stderrdata, popen.returncode)
@@ -395,7 +404,10 @@ class A2X(AttrDict):
         conf_files.append(os.path.join(a2xdir, CONF_FILE))
         # If the asciidoc executable and conf files are in the a2x directory
         # then use the local copy of asciidoc and skip the global a2x conf.
-        asciidoc = os.path.join(a2xdir, 'asciidoc.py')
+        if sys.version_info[0] == 3:
+            asciidoc = os.path.join(a2xdir, 'asciidoc3.py')
+        else:
+            asciidoc = os.path.join(a2xdir, 'asciidoc.py')
         asciidoc_conf = os.path.join(a2xdir, 'asciidoc.conf')
         if os.path.isfile(asciidoc) and os.path.isfile(asciidoc_conf):
             self.asciidoc = asciidoc
@@ -438,7 +450,7 @@ class A2X(AttrDict):
         for f in conf_files:
             if os.path.isfile(f):
                 verbose('loading configuration file: %s' % f)
-                execfile(f, globals())
+                exec(compile(open(f).read(), f, 'exec'), globals())
 
     def process_options(self):
         '''
