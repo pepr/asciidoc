@@ -21,7 +21,7 @@ import unicodedata
 ### Used by asciidocapi.py ###
 VERSION = '8.6.9 python3 alpha1'           # See CHANGELOG file for version history.
 
-MIN_PYTHON_VERSION = '3.4'  # Require this version of Python or better.
+MIN_PYTHON_VERSION = (3, 4, 0)  # Require this version of Python or better.
 
 #---------------------------------------------------------------------------
 # Program constants.
@@ -4541,8 +4541,8 @@ class Config:
         directory.
         cmd is the asciidoc command or asciidoc.py path.
         """
-        if float(sys.version[:3]) < float(MIN_PYTHON_VERSION):
-            message.stderr('FAILED: Python %s or better required' %
+        if sys.version_info < MIN_PYTHON_VERSION:
+            message.stderr('FAILED: Python %s or better. required' %
                     MIN_PYTHON_VERSION)
             sys.exit(1)
         if not os.path.exists(cmd):
