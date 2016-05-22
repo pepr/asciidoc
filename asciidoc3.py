@@ -4541,7 +4541,7 @@ class Config:
         directory.
         cmd is the asciidoc command or asciidoc.py path.
         """
-        if sys.version_info < MIN_PYTHON_VERSION:
+        if sys.version_info[:3] < MIN_PYTHON_VERSION:
             message.stderr('FAILED: Python %s or better. required' %
                     MIN_PYTHON_VERSION)
             sys.exit(1)
