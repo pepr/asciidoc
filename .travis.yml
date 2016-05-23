@@ -10,6 +10,6 @@ install:
 script:
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]];then time python tests/testasciidoc3.py update; else time python tests/testasciidoc.py update; fi
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]];then python asciidoc3.py --doctest; else python asciidoc.py --doctest;fi
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]];then python asciidocapi3.py; else python asciidoapi.py; fi
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]];then python asciidocapi3.py; else python asciidocapi.py; fi
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]];then time python tests/testasciidoc3.py run; else time python tests/testasciidoc.py run;fi
   - git clean -x -f doc tests/data
