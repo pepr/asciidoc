@@ -8,8 +8,8 @@
 
 :execute ../common.aap
 
-ASCIIDOC = python ../asciidoc.py -a revnumber=$(VERS)@ -a revdate="$(DATE)@"
-A2X = python ../a2x.py
+ASCIIDOC = python ../asciidoc3.py -a revnumber=$(VERS)@ -a revdate="$(DATE)@"
+A2X = python ../a2x3.py
 
 :syseval which fop | :assign FOP
 @if not _no.FOP:

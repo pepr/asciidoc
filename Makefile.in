@@ -22,9 +22,9 @@ srcdir = @srcdir@
 
 VPATH = @srcdir@
 
-ASCIIDOCCONF = $(sysconfdir)/asciidoc
+ASCIIDOCCONF = $(sysconfdir)/asciidoc3
 
-prog = asciidoc.py a2x.py asciidoc3.py
+prog = a2x3.py asciidoc3.py
 progdir = $(bindir)
 
 manp = $(patsubst %1.txt,%1,$(wildcard doc/*.1.txt))
@@ -107,7 +107,7 @@ $(DATATARGETS): % : %dir
 	$(INSTALL_DATA) $($@) $(DESTDIR)/$($<)/
 
 $(manp): %.1 : %.1.txt
-	python a2x.py -f manpage $<
+	python a2x3.py -f manpage $<
 
 docs:
 	$(INSTALL) -d $(DESTDIR)/$(docdir)
@@ -131,8 +131,8 @@ docs:
 		cp -R * $(DESTDIR)/$(docdir)/examples/website )
 
 progsymlink:
-	(cd $(DESTDIR)/$(progdir); ln -sf asciidoc.py asciidoc)
-	(cd $(DESTDIR)/$(progdir); ln -sf a2x.py a2x)
+	(cd $(DESTDIR)/$(progdir); ln -sf asciidoc3.py asciidoc3)
+	(cd $(DESTDIR)/$(progdir); ln -sf a2x3.py a2x3)
 
 fixconfpath:
 	@for f in $(prog); do \
@@ -147,12 +147,12 @@ build: fixconfpath $(manp)
 install: all $(PROGTARGETS) $(DATATARGETS) progsymlink
 
 uninstall:
-	rm -f $(DESTDIR)/$(progdir)/asciidoc
-	rm -f $(DESTDIR)/$(progdir)/asciidoc.py
-	rm -f $(DESTDIR)/$(progdir)/a2x
-	rm -f $(DESTDIR)/$(progdir)/a2x.py
-	rm -f $(DESTDIR)/$(manpdir)/asciidoc.1
-	rm -f $(DESTDIR)/$(manpdir)/a2x.1
+	rm -f $(DESTDIR)/$(progdir)/asciidoc3
+	rm -f $(DESTDIR)/$(progdir)/asciidoc3.py
+	rm -f $(DESTDIR)/$(progdir)/a2x3
+	rm -f $(DESTDIR)/$(progdir)/a2x3.py
+	rm -f $(DESTDIR)/$(manpdir)/asciidoc3.1
+	rm -f $(DESTDIR)/$(manpdir)/a2x3.1
 	rm -rf $(DESTDIR)/$(confdir)
 	rm -rf $(DESTDIR)/$(docdir)
 

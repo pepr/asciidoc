@@ -1,6 +1,6 @@
 language: python
 python:
-  - 2.7
+  - 3.4
   - 3.5
 install:
   # 12.04 LTS ships an outdated texlive https://launchpad.net/bugs/712521
@@ -8,8 +8,8 @@ install:
   - sudo apt-get update -yq2
   - sudo apt-get install -yq2 --no-install-recommends dvipng graphviz imagemagick lilypond source-highlight texlive-latex-base
 script:
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]];then time python tests/testasciidoc3.py update; else time python tests/testasciidoc.py update; fi
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]];then python asciidoc3.py --doctest; else python asciidoc.py --doctest;fi
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]];then python asciidocapi3.py; else python asciidocapi.py; fi
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]];then time python tests/testasciidoc3.py run; else time python tests/testasciidoc.py run;fi
+  - time python tests/testasciidoc3.py update
+  - python asciidoc3.py --doctest
+  - python asciidocapi3.py
+  - time python tests/testasciidoc3.py run
   - git clean -x -f doc tests/data

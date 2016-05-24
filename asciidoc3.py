@@ -4555,7 +4555,7 @@ class Config:
         global USER_DIR
         USER_DIR = userdir()
         if USER_DIR is not None:
-            USER_DIR = os.path.join(USER_DIR,'.asciidoc')
+            USER_DIR = os.path.join(USER_DIR,'.asciidoc3')
             if not os.path.isdir(USER_DIR):
                 USER_DIR = None
 
@@ -4696,7 +4696,7 @@ class Config:
         else:
             # Load from global configuration directory.
             result.append(CONF_DIR)
-        # Load configuration files from ~/.asciidoc if it exists.
+        # Load configuration files from ~/.asciidoc3 if it exists.
         if USER_DIR is not None:
             result.append(USER_DIR)
         return result
@@ -5739,12 +5739,12 @@ class Plugin:
     @staticmethod
     def get_dir():
         """
-        Return plugins path (.asciidoc/filters or .asciidoc/themes) in user's
+        Return plugins path (.asciidoc3/filters or .asciidoc3/themes) in user's
         home direcory or None if user home not defined.
         """
         result = userdir()
         if result:
-            result = os.path.join(result, '.asciidoc', Plugin.type+'s')
+            result = os.path.join(result, '.asciidoc3', Plugin.type+'s')
         return result
 
     @staticmethod
@@ -5792,7 +5792,7 @@ class Plugin:
         """
         Delete plugin directory.
         args[0] is plugin name.
-        args[1] is optional plugin directory (defaults to ~/.asciidoc/<plugin_name>).
+        args[1] is optional plugin directory (defaults to ~/.asciidoc3/<plugin_name>).
         """
         if len(args) not in (1,2):
             die('invalid number of arguments: --%s remove %s'
@@ -5854,9 +5854,9 @@ class Plugin:
 # ---------
 APP_FILE = None             # This file's full path.
 APP_DIR = None              # This file's directory.
-USER_DIR = None             # ~/.asciidoc
+USER_DIR = None             # ~/.asciidoc3
 # Global configuration files directory (set by Makefile build target).
-CONF_DIR = '/etc/asciidoc'
+CONF_DIR = '/etc/asciidoc3'
 HELP_FILE = 'help.conf'     # Default (English) help file.
 
 # Globals
