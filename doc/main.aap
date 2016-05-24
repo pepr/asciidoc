@@ -62,7 +62,7 @@ TEST_FILES = $*(ROOT).css-embedded.html
         :print WARNING: lynx(1) unavailable: skipping $target file generation
     @else:
         opt = -f ../text.conf
-        @if source_list[0] == 'asciidoc.1.txt':
+        @if source_list[0] == 'asciidoc3.1.txt':
             opt += -d manpage
         @else:
             opt += -n
@@ -71,7 +71,7 @@ TEST_FILES = $*(ROOT).css-embedded.html
 
 :rule %.css.html : %.txt ../README.asciidoc
     opt =
-    @if source_list[0] == 'asciidoc.1.txt':
+    @if source_list[0] == 'asciidoc3.1.txt':
         opt += -d manpage
     @else:
         opt += -n
@@ -84,7 +84,7 @@ TEST_FILES = $*(ROOT).css-embedded.html
 
 :rule %.css-embedded.html : %.txt ../README.asciidoc
     opt =
-    @if source_list[0] == 'asciidoc.1.txt':
+    @if source_list[0] == 'asciidoc3.1.txt':
         opt += -d manpage
     @else:
         opt += -n
@@ -97,7 +97,7 @@ TEST_FILES = $*(ROOT).css-embedded.html
 
 :rule %.xml : %.txt ../README.asciidoc
     opt =
-    @if source_list[0] in ('asciidoc.1.txt','a2x.1.txt'):
+    @if source_list[0] in ('asciidoc3.1.txt','a2x3.1.txt'):
         opt += -d manpage
     @else:
         opt += -n
@@ -111,7 +111,7 @@ TEST_FILES = $*(ROOT).css-embedded.html
 
 :rule %.sgml : %.txt ../README.asciidoc
     opt =
-    @if source_list[0] in ('asciidoc.1.txt','a2x.1.txt'):
+    @if source_list[0] in ('asciidoc3.1.txt','a2x3.1.txt'):
         opt += -d manpage
     @if source_list[0] == 'asciidoc.txt' or source_list[0].startswith('book'):
         opt += -d book
@@ -166,7 +166,7 @@ article-standalone.html: article.txt
 article-html5-toc2.html: article.txt
     :sys $ASCIIDOC -b html5 -a icons -a toc2 -a theme=flask -o $target $source
 
-asciidoc.1.html: asciidoc.1.txt
+asciidoc3.1.html: asciidoc3.1.txt
     :sys $ASCIIDOC -d manpage -b html4 $source
     @if _no.XMLLINT:
         :sys $XMLLINT --nonet --noout --valid --html $target
@@ -217,7 +217,7 @@ clean:
     :del {f} *.bak          # Remove aspell backups.
 
 spell: $INFILES ../CHANGELOG.txt ../README.asciidoc ../BUGS.txt ../INSTALL.txt \
-        a2x.1.txt faq.txt asciidocapi.txt testasciidoc.txt \
+        a2x3.1.txt faq.txt asciidocapi.txt testasciidoc.txt \
         epub-notes.txt publishing-ebooks-with-asciidoc.txt \
         source-highlight-filter.txt \
         slidy.txt slidy-example.txt
