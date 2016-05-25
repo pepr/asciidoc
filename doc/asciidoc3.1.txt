@@ -1,21 +1,21 @@
-ASCIIDOC(1)
+ASCIIDOC3(1)
 ===========
 :doctype: manpage
 
 
 NAME
 ----
-asciidoc - converts an AsciiDoc text file to HTML or DocBook
+asciidoc3 - converts an AsciiDoc text file to HTML or DocBook
 
 
 SYNOPSIS
 --------
-*asciidoc* ['OPTIONS'] 'FILE'
+*asciidoc3* ['OPTIONS'] 'FILE'
 
 
 DESCRIPTION
 -----------
-The asciidoc(1) command translates the AsciiDoc text file 'FILE' to
+The asciidoc3(1) command translates the AsciiDoc text file 'FILE' to
 DocBook or HTML.  If 'FILE' is '-' then the standard input is used.
 
 
@@ -46,7 +46,7 @@ OPTIONS
     option may be specified more than once.
 
 *--doctest*::
-    Run Python doctests in 'asciidoc' module.
+    Run Python doctests in 'asciidoc3' module.
 
 *-d, --doctype*='DOCTYPE'::
     Document type: 'article', 'manpage' or 'book'. The 'book' document
@@ -106,19 +106,19 @@ OPTIONS
 [[X1]]
 PLUGIN COMMANDS
 ---------------
-The asciidoc(1) *--filter*, *--backend* and *--theme* options are used
+The asciidoc3(1) *--filter*, *--backend* and *--theme* options are used
 to install, remove and list AsciiDoc filter, backend and theme
 plugins. Syntax:
 
-  asciidoc OPTION install ZIP_FILE [PLUGINS_DIR]
-  asciidoc OPTION remove PLUGIN_NAME [PLUGINS_DIR]
-  asciidoc OPTION list
-  asciidoc OPTION build ZIP_FILE PLUGIN_SOURCE
+  asciidoc3 OPTION install ZIP_FILE [PLUGINS_DIR]
+  asciidoc3 OPTION remove PLUGIN_NAME [PLUGINS_DIR]
+  asciidoc3 OPTION list
+  asciidoc3 OPTION build ZIP_FILE PLUGIN_SOURCE
 
 Where:
 
 *OPTION*::
-  asciidoc(1) *--filter*, *--backend* or *--theme* option specifying
+  asciidoc3(1) *--filter*, *--backend* or *--theme* option specifying
   the type of plugin.
 
 *PLUGIN_NAME*::
@@ -133,9 +133,9 @@ Where:
   The directory containing installed plugins. Each plugin is contained
   in its own separate subdirectory which has the same name as the
   plugin.
-  *PLUGINS_DIR* defaults to the `$HOME/.asciidoc/filters` (for
-  filter plugins) or `$HOME/.asciidoc/backends` (for backend plugins) or
-  `$HOME/.asciidoc/themes` (for theme plugins).
+  *PLUGINS_DIR* defaults to the `$HOME/.asciidoc3/filters` (for
+  filter plugins) or `$HOME/.asciidoc3/backends` (for backend plugins) or
+  `$HOME/.asciidoc3/themes` (for theme plugins).
 
 *PLUGIN_SOURCE*::
   The name of a directory containing the plugin source files or the
@@ -164,21 +164,21 @@ The plugin commands perform as follows:
 
 EXAMPLES
 --------
-`asciidoc asciidoc_file_name.txt`::
+`asciidoc3 asciidoc_file_name.txt`::
   Simply generate an html file from the asciidoc_file_name.txt that is in
-  current directory using asciidoc.
+  current directory using asciidoc3.
 
-`asciidoc -b html5 asciidoc_file_name.txt`::
+`asciidoc3 -b html5 asciidoc3_file_name.txt`::
   Use the `-b` switch to use one of the proposed backend or another one you
   installed on your computer.
 
-`asciidoc -a data-uri -a icons -a toc -a max-width=55em article.txt`::
+`asciidoc3 -a data-uri -a icons -a toc -a max-width=55em article.txt`::
   Use the `-a` switch to set attributes from command-line. AsciiDoc generated
   its stand-alone HTML user guide containing embedded CSS, JavaScript and
   images from the AsciiDoc article template with this command.
 
-`asciidoc -b html5 -d manpage asciidoc.1.txt`::
-  Generating the asciidoc manpage using the html5 backend.
+`asciidoc3 -b html5 -d manpage asciidoc3.1.txt`::
+  Generating the asciidoc3 manpage using the html5 backend.
 
 
 EXIT STATUS
@@ -211,7 +211,7 @@ Main web site: <http://asciidoc.org/>
 
 SEE ALSO
 --------
-a2x(1)
+a2x3(1)
 
 
 COPYING

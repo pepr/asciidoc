@@ -67,11 +67,11 @@ distribution: vers_update docs website
     :sys rm -f $(NAME)
 
 test:
-    :sys python ./asciidoc.py --doctest
-    :sys python ./asciidocapi.py
+    :sys python ./asciidoc.py3 --doctest
+    :sys python ./asciidocapi3.py
     :execute ./doc/main.aap test
     :syseval ls ./tests/data/*.html | :assign TESTFILES
     @if _no.TESTFILES:
-        :sys python ./tests/testasciidoc.py run
+        :sys python ./tests/testasciidoc3.py run
     @else:
         :print WARNING: no test files, run './tests/testasciidoc.py update'

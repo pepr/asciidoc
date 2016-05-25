@@ -1,17 +1,17 @@
-A2X(1)
+A2X3(1)
 ======
 :doctype: manpage
 
 
 NAME
 ----
-a2x - A toolchain manager for AsciiDoc (converts Asciidoc text files to other
+a2x3 - A toolchain manager for AsciiDoc (converts Asciidoc text files to other
       file formats)
 
 
 SYNOPSIS
 --------
-*a2x* ['OPTIONS'] 'SOURCE_FILE'
+*a2x3* ['OPTIONS'] 'SOURCE_FILE'
 
 
 DESCRIPTION
@@ -19,14 +19,14 @@ DESCRIPTION
 A DocBook toolchain manager that translates an AsciiDoc text file
 'SOURCE_FILE' to PDF, EPUB, DVI, PS, LaTeX, XHTML (single page or
 chunked), man page, HTML Help or plain text formats using
-'asciidoc(1)' and other applications (see <<X1,REQUISITES section>>).
+'asciidoc3(1)' and other applications (see <<X1,REQUISITES section>>).
 'SOURCE_FILE' can also be a DocBook file with an .xml extension.
 
 
 OPTIONS
 -------
 *-a, --attribute*='ATTRIBUTE'::
-  Set asciidoc(1) attribute value (shortcut for *--asciidoc-opts*='"-a
+  Set asciidoc3(1) attribute value (shortcut for *--asciidoc-opts*='"-a
   ATTRIBUTE"' option).
   This option may be specified more than once.
 
@@ -49,7 +49,7 @@ OPTIONS
 
 *-b, --backend*='BACKEND'::
   'BACKEND' is the name of an installed backend plugin. When this
-  option is specified 'a2x' attempts to load a file name 'a2x-backend.py'
+  option is specified 'a2x3' attempts to load a file name 'a2x-backend.py'
   from the 'BACKEND' plugin directory. It then converts the
   'SOURCE_FILE' to a 'BACKEND' formatted output file using a global
   function defined in 'a2x-backend.py' called 'to_BACKEND'.
@@ -141,7 +141,7 @@ OPTIONS
 
 Options can also be set in the AsciiDoc source file. If 'SOURCE_FILE'
 contains a comment line beginning with *// a2x:* then the remainder of
-the line will be treated as 'a2x' command-line options. For example:
+the line will be treated as 'a2x3' command-line options. For example:
 
   // a2x default options.
   //    a2x: -dbook --epubcheck
@@ -182,11 +182,11 @@ RESOURCES
 ---------
 Resources are files (typically CSS and images) that are required by
 HTML based outputs ('xhtml', 'epub', 'chunked', 'htmlhelp' formats).
-'a2x' scans the generated HTML files and builds a list of required CSS
+'a2x3' scans the generated HTML files and builds a list of required CSS
 and image files. Additional resource files can be specified explicitly
 using the *--resource* option.
 
-'a2x' searches for resource files in the following locations in the
+'a2x3' searches for resource files in the following locations in the
 following order:
 
 . The 'SOURCE_FILE' directory.
@@ -260,22 +260,22 @@ Resource option examples:
 
 EXAMPLES
 --------
-`a2x -f pdf doc/source-highlight-filter.txt`::
+`a2x3 -f pdf doc/source-highlight-filter.txt`::
   Generates `doc/source-highlight-filter.pdf` file.
 
-`a2x -f xhtml -D ../doc --icons -r ../images/ team.txt`::
+`a2x3 -f xhtml -D ../doc --icons -r ../images/ team.txt`::
   Creates HTML file `../doc/team.html`, uses admonition icons and
   recursively searches the `../images/` directory for any missing
   resources.
 
-`a2x -f manpage doc/asciidoc.1.txt`::
-  Generate `doc/asciidoc.1` manpage.
+`a2x3 -f manpage doc/asciidoc3.1.txt`::
+  Generate `doc/asciidoc3.1` manpage.
 
 
 [[X1]]
 REQUISITES
 ----------
-'a2x' uses the following programs:
+'a2x3' uses the following programs:
 
 - *Asciidoc*:
   http://asciidoc.org/
@@ -301,14 +301,14 @@ See also the latest README file.
 CONF FILES
 ----------
 A configuration file contains executable Python code that overrides
-the global configuration parameters in `a2x.py`.  Optional configuration
+the global configuration parameters in `a2x3.py`.  Optional configuration
 files are loaded in the following order:
 
-. `a2x.conf` from the directory containing the 'a2x.py' executable.
+. `a2x.conf` from the directory containing the 'a2x3.py' executable.
 . `a2x.conf` from the AsciiDoc global configuration directory.  Skip
   this step if we are executing a locally installed (non system wide)
   copy.
-. `a2x.conf` from the AsciiDoc `$HOME/.asciidoc` configuration
+. `a2x.conf` from the AsciiDoc `$HOME/.asciidoc3` configuration
   directory.
 . The 'CONF_FILE' specified in the '--conf-file' option.
 
@@ -355,7 +355,7 @@ See the AsciiDoc distribution BUGS file.
 
 AUTHOR
 ------
-a2x was originally written by Stuart Rackham. Many people have
+a2x3 was originally written by Stuart Rackham. Many people have
 contributed to it.
 
 
@@ -368,7 +368,7 @@ Main web site: http://asciidoc.org/
 
 SEE ALSO
 --------
-asciidoc(1)
+asciidoc3(1)
 
 
 COPYING

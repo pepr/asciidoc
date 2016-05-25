@@ -35,7 +35,7 @@ VERSION = '8.6.9'
 
 # AsciiDoc global configuration file directory.
 # NOTE: CONF_DIR is "fixed up" by Makefile -- don't rename or change syntax.
-CONF_DIR = '/etc/asciidoc'
+CONF_DIR = '/etc/asciidoc3'
 
 
 ######################################################################
@@ -404,10 +404,7 @@ class A2X(AttrDict):
         conf_files.append(os.path.join(a2xdir, CONF_FILE))
         # If the asciidoc executable and conf files are in the a2x directory
         # then use the local copy of asciidoc and skip the global a2x conf.
-        if sys.version_info[0] == 3:
-            asciidoc = os.path.join(a2xdir, 'asciidoc3.py')
-        else:
-            asciidoc = os.path.join(a2xdir, 'asciidoc.py')
+        asciidoc = os.path.join(a2xdir, 'asciidoc3.py')
         asciidoc_conf = os.path.join(a2xdir, 'asciidoc.conf')
         if os.path.isfile(asciidoc) and os.path.isfile(asciidoc_conf):
             self.asciidoc = asciidoc
@@ -418,7 +415,7 @@ class A2X(AttrDict):
         # From $HOME directory.
         home_dir = os.environ.get('HOME')
         if home_dir is not None:
-            conf_files.append(os.path.join(home_dir, '.asciidoc', CONF_FILE))
+            conf_files.append(os.path.join(home_dir, '.asciidoc3', CONF_FILE))
         # If asciidoc is not local to a2x then search the PATH.
         if not self.asciidoc:
             self.asciidoc = find_executable(ASCIIDOC)

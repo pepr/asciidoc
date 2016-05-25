@@ -1,6 +1,4 @@
-a2x.py
-asciidoc.py
-asciidocapi.py
+a2x3.py
 asciidoc3.py
 asciidocapi3.py
 base64-pipe.py
@@ -81,9 +79,9 @@ javascripts/*.js
 README
 README.asciidoc
 stylesheets/*.css
-tests/testasciidoc.py
+tests/testasciidoc3.py
 tests/testasciidoc.conf
-tests/asciidocapi.py
+tests/asciidocapi3.py
 tests/data/*.conf
 tests/data/*.txt
 themes/flask/*.css

@@ -1,15 +1,15 @@
 language: python
 python:
-  - 2.6
-  - 2.7
+  - 3.4
+  - 3.5
 install:
   # 12.04 LTS ships an outdated texlive https://launchpad.net/bugs/712521
   - sudo add-apt-repository --yes ppa:texlive-backports/ppa
   - sudo apt-get update -yq2
   - sudo apt-get install -yq2 --no-install-recommends dvipng graphviz imagemagick lilypond source-highlight texlive-latex-base
 script:
-  - time python tests/testasciidoc.py update
-  - python asciidoc.py --doctest
-  - python asciidocapi.py
-  - time python tests/testasciidoc.py run
+  - time python tests/testasciidoc3.py update
+  - python asciidoc3.py --doctest
+  - python asciidocapi3.py
+  - time python tests/testasciidoc3.py run
   - git clean -x -f doc tests/data

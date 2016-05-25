@@ -23,14 +23,14 @@ Doctests:
    >>> asciidoc.options('--no-header-footer')
    >>> asciidoc.attributes['author'] = 'Joe Bloggs'
    >>> asciidoc.execute(infile, outfile, backend='html4')
-   >>> print outfile.getvalue()
+   >>> print(outfile.getvalue())
    <p>Hello <strong>Joe Bloggs</strong></p>
 
    >>> asciidoc.attributes['author'] = 'Bill Smith'
    >>> infile = io.StringIO('Hello _{author}_')
    >>> outfile = io.StringIO()
    >>> asciidoc.execute(infile, outfile, backend='docbook')
-   >>> print outfile.getvalue()
+   >>> print(outfile.getvalue())
    <simpara>Hello <emphasis>Bill Smith</emphasis></simpara>
 
 2. Check error handling:
