@@ -4069,11 +4069,11 @@ class Reader1:
             self.indir = None
         else:
             # The file must be open in binary mode, because the content
-            # is read to buffer ahead of processing. In the text mode,
-            # the buffer is decoded using the given encoding. It means more
-            # lines are decoded before they are iterated. This way it is
-            # not possible to avoid decoding the buffer using wrong encoding
-            # if the line contains `:encoding: ...`.
+            # is read to buffer ahead of processing. If the file were open
+            # in the text mode, the buffer would be decoded using some encoding.
+            # It means that lines (as strings) would be decoded before they
+            # are iterated. However, the input file may prescribe the encoding
+            # that cannot be anticipated -- using the `:encoding: ...`.
             self.f = open(fname, 'rb')
             self.infile = fname
             self.indir = os.path.dirname(fname)
@@ -4114,7 +4114,7 @@ class Reader1:
                 if isinstance(linebytes, bytes):
                     s = linebytes.decode(encoding) # line as (unicode) string
                 else:
-                    s = linebytes
+                    s = linebytes #???PP should always be bytes, or not?
                 s = s.rstrip()  # strip trailing spaces and line-end sequences
                 # If the line itself defines encoding for the next lines,
                 # capture the encoding. ???PP this is quick hack and should be improved.
@@ -4130,7 +4130,7 @@ class Reader1:
 
         # Return first (oldest) buffer entry.
         if len(self.linebuffer) > 0:
-            self.cursor = list(self.linebuffer.pop(0))
+            self.cursor = list(self.linebuffer.pop(0)) #???PP check for the necessity of the list() wrap
             line = self.cursor[2]
             # Check for include macro.
             mo = macros.match('+', r'^include[1]?$', line)
@@ -4249,7 +4249,7 @@ class Reader(Reader1):
         self.skipto = -1        # The depth at which skipping is reenabled.
 
     def read_super(self):
-        result = Reader1.read(self,self.skip)
+        result = Reader1.read(self, self.skip)
         if result is None and self.skip:
             raise EAsciiDoc('missing endif::%s[]' % self.skipname)
         return result
@@ -4259,7 +4259,7 @@ class Reader(Reader1):
         if result is None:
             return None
         while self.skip:
-            mo = macros.match('+',r'ifdef|ifndef|ifeval|endif',result)
+            mo = macros.match('+', r'ifdef|ifndef|ifeval|endif', result)
             if mo:
                 name = mo.group('name')
                 target = mo.group('target')
@@ -4273,7 +4273,7 @@ class Reader(Reader1):
                         if target and self.skipname != target:
                             raise EAsciiDoc('mismatched macro: %s' % result)
                 else:
-                    if name in ('ifdef','ifndef'):
+                    if name in ('ifdef', 'ifndef'):
                         if not target:
                             raise EAsciiDoc('missing macro target: %s' % result)
                         if not attrlist:
@@ -4285,7 +4285,7 @@ class Reader(Reader1):
             result = self.read_super()
             if result is None:
                 return None
-        mo = macros.match('+',r'ifdef|ifndef|ifeval|endif',result)
+        mo = macros.match('+', r'ifdef|ifndef|ifeval|endif', result)
         if mo:
             name = mo.group('name')
             target = mo.group('target')
@@ -4293,7 +4293,7 @@ class Reader(Reader1):
             if name == 'endif':
                 self.depth = self.depth-1
             else:
-                if not target and name in ('ifdef','ifndef'):
+                if not target and name in ('ifdef', 'ifndef'):
                     raise EAsciiDoc('missing macro target: %s' % result)
                 defined = is_attr_defined(target, document.attributes)
                 if name == 'ifdef':
@@ -4329,7 +4329,7 @@ class Reader(Reader1):
             result = self.read()
         if result:
             # Expand executable block macros.
-            mo = macros.match('+',r'eval|sys|sys2',result)
+            mo = macros.match('+', r'eval|sys|sys2', result)
             if mo:
                 action = mo.group('name')
                 cmd = mo.group('attrlist')
@@ -4337,7 +4337,7 @@ class Reader(Reader1):
                 self.cursor[2] = result  # So we don't re-evaluate.
         if result:
             # Unescape escaped system macros.
-            if macros.match('+',r'\\eval|\\sys|\\sys2|\\ifdef|\\ifndef|\\endif|\\include|\\include1',result):
+            if macros.match('+', r'\\eval|\\sys|\\sys2|\\ifdef|\\ifndef|\\endif|\\include|\\include1', result):
                 result = result[1:]
         return result
 
@@ -4376,6 +4376,7 @@ class Reader(Reader1):
         finally:
             self.cursor = save_cursor
         return tuple(result)
+
     def skip_blank_lines(self):
         reader.read_until(r'\s*\S+')
 
@@ -4428,11 +4429,13 @@ class Writer:
     def close(self):
         if self.fname != '<stdout>':
             self.f.close()
+
     def write_line(self, line=None):
         if not (self.skip_blank_lines and (not line or not line.strip())):
             self.f.write((line or '') + '\n')
             self.lines_out = self.lines_out + 1
-    def write(self,*args,**kwargs):
+
+    def write(self, *args, **kwargs):
         """Iterates arguments, writes tuple and list arguments one line per
         element, else writes argument as single line. If no arguments writes
         blank line. If argument is None nothing is written. '\n' is
@@ -4449,7 +4452,8 @@ class Writer:
                         self.write_line(s)
                 elif arg is not None:
                     self.write_line(arg)
-    def write_tag(self,tag,content,subs=None,d=None,**kwargs):
+
+    def write_tag(self, tag, content, subs=None, d=None, **kwargs):
         """Write content enveloped by tag.
         Substitutions specified in the 'subs' list are perform on the
         'content'."""
@@ -4458,7 +4462,7 @@ class Writer:
         stag,etag = subs_tag(tag,d)
         content = Lex.subs(content,subs)
         if 'trace' in kwargs:
-            trace(kwargs['trace'],[stag]+content+[etag])
+            trace(kwargs['trace'], [stag] + content + [etag])
         if stag:
             self.write(stag)
         if content:
@@ -4501,6 +4505,7 @@ class Config:
             r'paradef-.+',r'listdef-.+',r'blockdef-.+',r'tabledef-.+',
             r'tabletags-.+',r'listtags-.+','replacements[23]',
             r'old_tabledef-.+')
+
     def __init__(self):
         self.sections = collections.OrderedDict()   # Keyed by section name containing
                                         # lists of section lines.
