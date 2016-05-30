@@ -1,4 +1,4 @@
-// Test for lang-it.conf language file.
+// Test pro jazykový konfigurační soubor lang-cs.conf.
 :lang: cs
 
 ASCIIDOC(1)
@@ -9,7 +9,7 @@ NAME
 ----
 asciidoc - converts an AsciiDoc text file to HTML or DocBook
 
-SINOSSI
+PŘEHLED
 -------
 *asciidoc* ['OPTIONS'] 'FILE'
 

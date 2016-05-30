@@ -1,4 +1,4 @@
-// Test for lang-cs.conf language file.
+// Test pro jazykový konfigurační soubor lang-cs.conf.
 :lang: cs
 
 Languages Test
@@ -7,37 +7,37 @@ Languages Test
 :revdate:   2003-12-21
 
 ifdef::doctype-article[]
-Abstract
+Abstrakt
 --------
-Abstract special section.
+Speciální sekce pro abstrakt.
 
 endif::doctype-article[]
 
 
 ifdef::doctype-book[]
-Dedica
-------
-Dedication special section.
-
-
-Prefazione
-----------
-Preface special section.
-
-
-Colofone
+Věnování
 --------
-Colophon special section.
+Speciální sekce pro věnování.
+
+
+Předmluva
+---------
+Speciální sekce pro předmluvu
+
+
+Tiráž
+-----
+Speciální sekce pro tiráž.
 
 endif::doctype-book[]
 
 
-The First Section
------------------
-Admonishments
+Sekce první úrovně
+------------------
+Připomínání
 ~~~~~~~~~~~~~
-Do not translate in the source file -- they are translated to the
-output file
+Nepřekládejte ve zdrojovém textu (NOTE, TIP, ...) -- překládají se při generování
+výstupního souboru.
 
 NOTE: Lorum ipsum.
 
@@ -49,31 +49,30 @@ CAUTION: Lorum ipsum.
 
 IMPORTANT: Lorum ipsum.
 
-.Tiger
-image::../../images/tiger.png[Tiger image]
+.Tygr
+image::../../images/tiger.png[Obrázek tigra]
 
-Followed by an example table:
+Následuje příklad tabulky:
 
-.Table
+.Toto je název tabulky
 [width="60%",options="header"]
 |==============================================
-| Option          | Description
-| -a 'USER GROUP' | Add 'USER' to 'GROUP'.
-| -R 'GROUP'      | Disables access to 'GROUP'.
+| Volba           | Popis
+| -a 'USER GROUP' | Přidá 'USER' do 'GROUP'.
+| -R 'GROUP'      | Zakáže přístup ke GROUP'.
 |==============================================
 
-And now for something completely different: ((monkeys)), lions and
-tigers.
+A teď něco úplně jiného: ((opice)), lvi a tygři.
 
 
-Appendice A: Example Appendix
------------------------------
-Appendix special section.
+Příloha A: Příklad přílohy
+--------------------------
+Speciální sekce pro přílohu.
 
 
-Bibliografia
-------------
-Bibliography special section.
+Literatura
+----------
+Speciální sekce pro literaturu.
 
 [bibliography]
 - [[[taoup]]] Eric Steven Raymond. 'The Art of Unix
@@ -83,24 +82,24 @@ Bibliography special section.
   ISBN 1-56592-580-7.
 
 
-Glossario
----------
-Glossary special section.
+Glosář
+------
+Speciální sekce pro glosář.
 
 [glossary]
-A glossary term::
-  The corresponding (indented) definition.
+Termín glosáře (pojem)::
+  Odpovídající (odsazená) definice pojmu.
 
-A second glossary term::
-  The corresponding (indented) definition.
+Druhý pojem glosáře::
+  Odpovídající (odsazená) definice pojmu.
 
 
 ifdef::basebackend-docbook[]
-Index
------
+Rejstřík
+--------
 ////////////////////////////////////////////////////////////////
-Index special section.
-The index is normally left completely empty, it's contents being
-generated automatically by the DocBook toolchain.
+Speciální sekce pro rejstřík.
+Rejstřík bývá obvykle úplně prázdný. Jeho obsah se generuje automaticky
+nástroji pro DocBook.
 ////////////////////////////////////////////////////////////////
 endif::basebackend-docbook[]
