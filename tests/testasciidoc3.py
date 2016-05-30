@@ -216,10 +216,10 @@ class AsciiDocTest(object):
         if not os.path.isdir(self.datadir):
             print(('CREATING: %s' % self.datadir))
             os.mkdir(self.datadir)
-        f = open(self.backend_filename(backend),'w+')
+        f = open(self.backend_filename(backend), 'w', encoding='utf-8')
         try:
-            print(('WRITING: %s' % f.name))
-            f.writelines([ s + os.linesep for s in lines])
+            print('WRITING: %s' % f.name)
+            f.write('\n'.join(lines))
         finally:
             f.close()
 
@@ -400,7 +400,7 @@ if __name__ == '__main__':
     # Process command line options.
     import getopt
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'f:', ['force'])
+        opts, args = getopt.getopt(sys.argv[1:], 'f:', ['force'])
     except getopt.GetoptError:
         usage('illegal command options')
         sys.exit(1)
