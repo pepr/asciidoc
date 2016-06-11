@@ -17,3 +17,4 @@ progdoc/
 
 # ignore the HTML -- generated results
 doc/*.html
+README.html
