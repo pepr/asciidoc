@@ -1263,8 +1263,8 @@ class Lex:
             result = core.g.blocks.current
         elif core.g.tables_OLD.isnext():
             result = core.g.tables_OLD.current
-        elif tables.isnext():
-            result = tables.current
+        elif core.g.tables.isnext():
+            result = core.g.tables.current
         else:
             if not core.g.paragraphs.isnext():
                 raise EAsciiDoc('paragraph expected')
@@ -2492,7 +2492,7 @@ class AbstractBlock:
     def push_blockname(self, blockname=None):
         '''On block entry set the `blockname` attribute.
 
-        Only applies to delimited blocks, lists and tables.
+        Only applies to delimited blocks, lists and core.g.tables.
         '''
         if blockname is None:
             blockname = self.attributes.get('style', self.short_name()).lower()
@@ -2701,7 +2701,7 @@ class Paragraphs(AbstractBlocks):
                 re.compile(r'^\+$|^$'),
                 re.compile(AttributeList.pattern),
                 re.compile(core.g.blocks.delimiters),
-                re.compile(tables.delimiters),
+                re.compile(core.g.tables.delimiters),
                 re.compile(core.g.tables_OLD.delimiters),
             ]
     def load(self,sections):
@@ -2960,7 +2960,7 @@ class Lists(AbstractBlocks):
                 re.compile(AttributeList.pattern),
                 re.compile(core.g.lists.delimiters),
                 re.compile(core.g.blocks.delimiters),
-                re.compile(tables.delimiters),
+                re.compile(core.g.tables.delimiters),
                 re.compile(core.g.tables_OLD.delimiters),
             ]
     def load(self,sections):
@@ -3159,7 +3159,7 @@ class Table(AbstractBlock):
         tags = [self.tags]
         tags += [s['tags'] for s in self.styles.values() if 'tags' in s]
         for t in tags:
-            if t not in tables.tags:
+            if t not in core.g.tables.tags:
                 self.error('missing section: [tabletags-%s]' % t,halt=True)
         if self.separator:
             # Evaluate escape characters.
@@ -3185,7 +3185,7 @@ class Table(AbstractBlock):
                 else:
                     format = v
             elif k == 'tags':
-                if v not in tables.tags:
+                if v not in core.g.tables.tags:
                     self.error('illegal %s=%s' % (k,v))
                 else:
                     tags = v
@@ -3215,8 +3215,8 @@ class Table(AbstractBlock):
         self.pcwidth = pcwidth
     def get_tags(self,params):
         tags = self.get_param('tags',params)
-        assert(tags and tags in tables.tags)
-        return tables.tags[tags]
+        assert(tags and tags in core.g.tables.tags)
+        return core.g.tables.tags[tags]
     def get_style(self,prefix):
         """
         Return the style dictionary whose name starts with 'prefix'.
@@ -3397,7 +3397,7 @@ class Table(AbstractBlock):
         Return a string of output markup from a list of rows, each row
         is a list of raw data text.
         """
-        tags = tables.tags[self.parameters.tags]
+        tags = core.g.tables.tags[self.parameters.tags]
         if rowtype == 'header':
             rtag = tags.headrow
         elif rowtype == 'footer':
@@ -3618,7 +3618,7 @@ class Table(AbstractBlock):
         self.pop_blockname()
 
 class Tables(AbstractBlocks):
-    """List of tables."""
+    """List of core.g.tables."""
     BLOCK_TYPE = Table
     PREFIX = 'tabledef-'
     TAGS = ('colspec', 'headrow','footrow','bodyrow',
@@ -4684,7 +4684,7 @@ class Config:
         core.g.lists.load(sections)
         core.g.blocks.load(sections)
         core.g.tables_OLD.load(sections)
-        tables.load(sections)
+        core.g.tables.load(sections)
         macros.load(sections.get('macros',()))
 
     def get_load_dirs(self):
@@ -4875,7 +4875,7 @@ class Config:
         core.g.lists.validate()
         core.g.blocks.validate()
         core.g.tables_OLD.validate()
-        tables.validate()
+        core.g.tables.validate()
         macros.validate()
         core.g.message.linenos = None
 
@@ -4929,7 +4929,7 @@ class Config:
         core.g.lists.dump()
         core.g.blocks.dump()
         core.g.tables_OLD.dump()
-        tables.dump()
+        core.g.tables.dump()
         macros.dump()
         # Dump remaining sections.
         for k in self.sections.keys():
@@ -5586,7 +5586,7 @@ class Table_OLD(AbstractBlock):
         self.pop_blockname()
 
 class Tables_OLD(AbstractBlocks):
-    """List of tables."""
+    """List of core.g.tables."""
     BLOCK_TYPE = Table_OLD
     PREFIX = 'old_tabledef-'
     def __init__(self):
@@ -5877,7 +5877,7 @@ core.g.paragraphs = Paragraphs()    # Paragraph definitions.
 core.g.lists = Lists()              # List definitions.
 core.g.blocks = DelimitedBlocks()   # DelimitedBlock definitions.
 core.g.tables_OLD = Tables_OLD()    # Table_OLD definitions.
-tables = Tables()           # Table definitions.
+core.g.tables = Tables()            # Table definitions.
 macros = Macros()           # Macro definitions.
 calloutmap = CalloutMap()   # Coordinates callouts and callout list.
 trace = Trace()             # Implements trace attribute processing.
