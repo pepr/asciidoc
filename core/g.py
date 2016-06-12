@@ -4,7 +4,7 @@ This is a temporary module that plays the role of a singleton -- to implement
 global variables used by the original AsciiDoc design. The globals should
 disappear after finishing the refactoring."""
 
-def init_globals(CONF_DIR, HELP_FILE):
+def init_globals(CONF_DIR, HELP_FILE, prog):
     global app_file, app_dir, user_dir
     app_file = None             # This file's full path.
     app_dir = None              # This file's directory.
@@ -13,10 +13,14 @@ def init_globals(CONF_DIR, HELP_FILE):
     global conf_dir, help_file
     conf_dir = CONF_DIR
     help_file = HELP_FILE
+    
+    global progname
+    progname = prog             # asciidoc script basename without extension
 
     # Globals
     # -------
-    ##global document, config, reader, writer, message
+    ##from .document import Document
+    ##global document #, config, reader, writer, message
     ##document = Document()       # The document being processed.
     ##config = Config()           # Configuration file reader.
     ##reader = Reader()           # Input stream line reader.

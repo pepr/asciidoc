@@ -127,10 +127,7 @@ class Trace:
                 core.g.message.stderr(msg)
 
 class Message:
-    """
-    Message functions.
-    """
-    PROG = os.path.basename(os.path.splitext(__file__)[0])
+    """Message functions."""
 
     def __init__(self):
         # Set to True or False to globally override line numbers method
@@ -147,7 +144,7 @@ class Message:
             return
         self.messages.append(msg)
         if __name__ == '__main__':
-            sys.stderr.write('%s: %s%s' % (self.PROG, msg, os.linesep))
+            sys.stderr.write('%s: %s%s' % (core.g.progname, msg, os.linesep))
         self.prev_msg = msg
 
     def verbose(self, msg,linenos=True):
@@ -5860,7 +5857,8 @@ import core.g
 CONF_DIR = '/etc/asciidoc3'
 HELP_FILE = 'help.conf'     # Default (English) help file.
 
-core.g.init_globals(CONF_DIR, HELP_FILE)
+core.g.init_globals(CONF_DIR, HELP_FILE,
+                    os.path.splitext(os.path.basename(__file__))[0])    # progname
 
 # Globals
 # -------
