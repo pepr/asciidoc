@@ -963,8 +963,8 @@ def system(name, args, is_macro=False, attrs=None):
     else:
         assert False
     if result and name in ('eval3','sys3'):
-        macros.passthroughs.append(result)
-        result = '\x07' + str(len(macros.passthroughs)-1) + '\x07'
+        core.g.macros.passthroughs.append(result)
+        result = '\x07' + str(len(core.g.macros.passthroughs)-1) + '\x07'
     return result
 
 def subs_attrs(lines, dictionary=None):
@@ -1255,8 +1255,8 @@ class Lex:
                 result = FloatingTitle
             else:
                 result = Title
-        elif macros.isnext():
-            result = macros.current
+        elif core.g.macros.isnext():
+            result = core.g.macros.current
         elif core.g.lists.isnext():
             result = core.g.lists.current
         elif core.g.blocks.isnext():
@@ -1307,9 +1307,9 @@ class Lex:
             elif o in ('replacements','replacements2','replacements3'):
                 result = core.g.config.subs_replacements(result,o)
             elif o == 'macros':
-                result = macros.subs(result)
+                result = core.g.macros.subs(result)
             elif o == 'callouts':
-                result = macros.subs(result,callouts=True)
+                result = core.g.macros.subs(result,callouts=True)
             else:
                 raise EAsciiDoc('illegal substitution option: %s' % o)
             trace(o, s, result)
@@ -1330,7 +1330,7 @@ class Lex:
         # Join lines so quoting can span multiple lines.
         para = '\n'.join(lines)
         if 'macros' in options:
-            para = macros.extract_passthroughs(para)
+            para = core.g.macros.extract_passthroughs(para)
         for o in options:
             if o == 'attributes':
                 # If we don't substitute attributes line-by-line then a single
@@ -1340,7 +1340,7 @@ class Lex:
             else:
                 para = Lex.subs_1(para,(o,))
         if 'macros' in options:
-            para = macros.restore_passthroughs(para)
+            para = core.g.macros.restore_passthroughs(para)
         return para.splitlines()
 
     @staticmethod
@@ -1495,10 +1495,10 @@ class Document:
                 finished = False
                 core.g.blocks.current.translate()
             if noblanks and not core.g.reader.read_next(): return result
-            if macros.isnext() and macros.current.name == 'comment':
+            if core.g.macros.isnext() and core.g.macros.current.name == 'comment':
                 result = True
                 finished = False
-                macros.current.translate()
+                core.g.macros.current.translate()
             if not comments_only:
                 if AttributeEntry.isnext():
                     result = True
@@ -3879,7 +3879,7 @@ class Macro:
                     del d['attrlist']
                 else:
                     if self.prefix == '':
-                        # Unescape ] characters in inline macros.
+                        # Unescape ] characters in inline core.g.macros.
                         d['attrlist'] = d['attrlist'].replace('\\]',']')
                     parse_attributes(d['attrlist'],d)
                     # Generate option attributes.
@@ -3888,7 +3888,7 @@ class Macro:
                                 '%s: illegal option name' % name)
                         for option in options:
                             d[option+'-option'] = ''
-                    # Substitute single quoted attribute values in block macros.
+                    # Substitute single quoted attribute values in block core.g.macros.
                     if self.prefix == '#':
                         AttributeList.subs(d)
             if name == 'callout':
@@ -3935,12 +3935,12 @@ class Macro:
         s = core.g.reader.read()
         before = s
         if self.has_passthrough():
-            s = macros.extract_passthroughs(s,'#')
+            s = core.g.macros.extract_passthroughs(s,'#')
         s = subs_attrs(s)
         if s:
             s = self.subs(s)
             if self.has_passthrough():
-                s = macros.restore_passthroughs(s)
+                s = core.g.macros.restore_passthroughs(s)
             if s:
                 trace('macro block',before,s)
                 core.g.writer.write(s)
@@ -3976,7 +3976,7 @@ class Macro:
             passtext = Lex.subs_1(passtext,subslist)
             if passtext is None: passtext = ''
             if self.prefix == '':
-                # Unescape ] characters in inline macros.
+                # Unescape ] characters in inline core.g.macros.
                 passtext = passtext.replace('\\]',']')
             passthroughs.append(passtext)
             # Tabs guarantee the placeholders are unambiguous.
@@ -4038,7 +4038,7 @@ UTF8_BOM = b'\xef\xbb\xbf'
 class Reader1:
     """Line oriented AsciiDoc input file core.g.reader.
 
-    The reader processes include and conditional inclusion system macros.
+    The reader processes include and conditional inclusion system core.g.macros.
     Tabs are expanded and lines are right trimmed.
 
     Attention: This class is not to be used directly. Use the Reader class instead.
@@ -4133,7 +4133,7 @@ class Reader1:
             self.cursor = list(self.linebuffer.pop(0)) #???PP check for the necessity of the list() wrap
             line = self.cursor[2]
             # Check for include macro.
-            mo = macros.match('+', r'^include[1]?$', line)
+            mo = core.g.macros.match('+', r'^include[1]?$', line)
             if mo and not skip:
                 # Parse include macro attributes.
                 attrs = {}
@@ -4259,7 +4259,7 @@ class Reader(Reader1):
         if result is None:
             return None
         while self.skip:
-            mo = macros.match('+', r'ifdef|ifndef|ifeval|endif', result)
+            mo = core.g.macros.match('+', r'ifdef|ifndef|ifeval|endif', result)
             if mo:
                 name = mo.group('name')
                 target = mo.group('target')
@@ -4285,7 +4285,7 @@ class Reader(Reader1):
             result = self.read_super()
             if result is None:
                 return None
-        mo = macros.match('+', r'ifdef|ifndef|ifeval|endif', result)
+        mo = core.g.macros.match('+', r'ifdef|ifndef|ifeval|endif', result)
         if mo:
             name = mo.group('name')
             target = mo.group('target')
@@ -4328,16 +4328,16 @@ class Reader(Reader1):
                     self.depth = self.depth+1
             result = self.read()
         if result:
-            # Expand executable block macros.
-            mo = macros.match('+', r'eval|sys|sys2', result)
+            # Expand executable block core.g.macros.
+            mo = core.g.macros.match('+', r'eval|sys|sys2', result)
             if mo:
                 action = mo.group('name')
                 cmd = mo.group('attrlist')
                 result = system(action, cmd, is_macro=True)
                 self.cursor[2] = result  # So we don't re-evaluate.
         if result:
-            # Unescape escaped system macros.
-            if macros.match('+', r'\\eval|\\sys|\\sys2|\\ifdef|\\ifndef|\\endif|\\include|\\include1', result):
+            # Unescape escaped system core.g.macros.
+            if core.g.macros.match('+', r'\\eval|\\sys|\\sys2|\\ifdef|\\ifndef|\\endif|\\include|\\include1', result):
                 result = result[1:]
         return result
 
@@ -4597,7 +4597,7 @@ class Config:
         # same if the source file is in the application directory).
         if os.path.realpath(fname) in self.loaded:
             return True
-        rdr = Reader('utf-8')  # Reader processes system macros.
+        rdr = Reader('utf-8')  # Reader processes system core.g.macros.
         core.g.message.linenos = False         # Disable document line numbers.
         rdr.open(fname)
         core.g.message.linenos = None
@@ -4685,7 +4685,7 @@ class Config:
         core.g.blocks.load(sections)
         core.g.tables_OLD.load(sections)
         core.g.tables.load(sections)
-        macros.load(sections.get('macros',()))
+        core.g.macros.load(sections.get('macros',()))
 
     def get_load_dirs(self):
         """
@@ -4876,7 +4876,7 @@ class Config:
         core.g.blocks.validate()
         core.g.tables_OLD.validate()
         core.g.tables.validate()
-        macros.validate()
+        core.g.macros.validate()
         core.g.message.linenos = None
 
     def entries_section(self,section_name):
@@ -4930,7 +4930,7 @@ class Config:
         core.g.blocks.dump()
         core.g.tables_OLD.dump()
         core.g.tables.dump()
-        macros.dump()
+        core.g.macros.dump()
         # Dump remaining sections.
         for k in self.sections.keys():
             if not self.entries_section(k):
@@ -5087,7 +5087,7 @@ class Config:
         """Expand any template::[] macros in a list of section entries."""
         result = []
         for line in entries:
-            mo = macros.match('+',r'template',line)
+            mo = core.g.macros.match('+',r'template',line)
             if mo:
                 s = mo.group('attrlist')
                 if s in self.sections:
@@ -5878,7 +5878,7 @@ core.g.lists = Lists()              # List definitions.
 core.g.blocks = DelimitedBlocks()   # DelimitedBlock definitions.
 core.g.tables_OLD = Tables_OLD()    # Table_OLD definitions.
 core.g.tables = Tables()            # Table definitions.
-macros = Macros()           # Macro definitions.
+core.g.macros = Macros()            # Macro definitions.
 calloutmap = CalloutMap()   # Coordinates callouts and callout list.
 trace = Trace()             # Implements trace attribute processing.
 
