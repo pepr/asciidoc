@@ -20,6 +20,8 @@ import unicodedata
 from core.util import userdir, EAsciiDoc, localapp, is_attr_defined, parse_entries
 from core.util import update_attrs
 
+from core.document import Title
+
 ### Used by asciidocapi.py ###
 VERSION = '8.6.9 python3 alpha1'           # See CHANGELOG file for version history.
 

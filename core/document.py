@@ -7,7 +7,7 @@ import time
 import re
 
 import core.g
-from core.util import InsensitiveDict, time_str, date_str, localapp
+from core.util import InsensitiveDict, time_str, date_str, localapp, EAsciiDoc
 
 class Document:
 

@@ -35,21 +35,29 @@ def init_globals(CONF_DIR, HELP_FILE, prog, asciidoc_ver):
     global message
     message = Message()         # Message functions.
 
-    from .document import Paragraphs
-    global paraghraphs
+    from .document import Paragraphs, Lists, DelimitedBlocks, Tables_OLD, Tables
+
+    global paragraphs
     paragraphs = Paragraphs()   # Paragraph definitions.
 
-    ##global lists, blocks, tables_OLD, tables, macros, calloutmap, trace
-    ##lists = Lists()             # List definitions.
-    ##blocks = DelimitedBlocks()  # DelimitedBlock definitions.
-    ##tables_OLD = Tables_OLD()   # Table_OLD definitions.
-    ##tables = Tables()           # Table definitions.
-    
-    from .document import Macros
+    global lists
+    lists = Lists()             # List definitions.
+
+    global blocks
+    blocks = DelimitedBlocks()  # DelimitedBlock definitions.
+
+    global tables_OLD
+    tables_OLD = Tables_OLD()   # Table_OLD definitions.
+
+    global tables
+    tables = Tables()           # Table definitions.
+
+    from .document import Macros, CalloutMap
     global macros
     macros = Macros()           # Macro definitions.
-    
-    ##calloutmap = CalloutMap()   # Coordinates callouts and callout list.
+
+    global calloutmap
+    calloutmap = CalloutMap()   # Coordinates callouts and callout list.
 
     from .util import Trace
     global trace
