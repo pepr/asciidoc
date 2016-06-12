@@ -1257,8 +1257,8 @@ class Lex:
                 result = Title
         elif macros.isnext():
             result = macros.current
-        elif lists.isnext():
-            result = lists.current
+        elif core.g.lists.isnext():
+            result = core.g.lists.current
         elif blocks.isnext():
             result = blocks.current
         elif tables_OLD.isnext():
@@ -2749,7 +2749,7 @@ class List(AbstractBlock):
         tags = [self.tags]
         tags += [s['tags'] for s in self.styles.values() if 'tags' in s]
         for t in tags:
-            if t not in lists.tags:
+            if t not in core.g.lists.tags:
                 self.error('missing section: [listtags-%s]' % t,halt=True)
     def isnext(self):
         result = AbstractBlock.isnext(self)
@@ -2780,7 +2780,7 @@ class List(AbstractBlock):
         itemtag = subs_tag(self.tag.item, self.attributes)
         core.g.writer.write(itemtag[0],trace='list item open')
         # Write ItemText.
-        text = core.g.reader.read_until(lists.terminators)
+        text = core.g.reader.read_until(core.g.lists.terminators)
         if self.text:
             text = [self.text] + list(text)
         if text:
@@ -2796,7 +2796,7 @@ class List(AbstractBlock):
                 # Titled elements terminate the list.
                 break
             next = Lex.next()
-            if next in lists.open:
+            if next in core.g.lists.open:
                 break
             elif isinstance(next,List):
                 next.translate()
@@ -2887,7 +2887,7 @@ class List(AbstractBlock):
         AbstractBlock.translate(self)
         if self.short_name() in ('bibliography','glossary','qanda'):
             core.g.message.deprecated('old %s list syntax' % self.short_name())
-        lists.open.append(self)
+        core.g.lists.open.append(self)
         attrs = self.mo.groupdict().copy()
         for k in ('label','text','index'):
             if k in attrs: del attrs[k]
@@ -2904,7 +2904,7 @@ class List(AbstractBlock):
                 core.g.message.error('illegal numbered list style: %s' % self.number_style)
                 # Fall back to default style.
                 self.attributes['style'] = self.number_style = self.style
-        self.tag = lists.tags[self.parameters.tags]
+        self.tag = core.g.lists.tags[self.parameters.tags]
         self.check_tags()
         if 'width' in self.attributes:
             # Set horizontal list 'labelwidth' and 'itemwidth' attributes.
@@ -2938,9 +2938,9 @@ class List(AbstractBlock):
         if self.type == 'callout':
             calloutmap.validate(self.ordinal)
             calloutmap.listclose()
-        lists.open.pop()
-        if len(lists.open):
-            core.g.document.attributes['listindex'] = str(lists.open[-1].ordinal)
+        core.g.lists.open.pop()
+        if len(core.g.lists.open):
+            core.g.document.attributes['listindex'] = str(core.g.lists.open[-1].ordinal)
         self.pop_blockname()
 
 class Lists(AbstractBlocks):
@@ -2951,14 +2951,14 @@ class Lists(AbstractBlocks):
     TAGS = ('list', 'entry','item','text', 'label','term')
     def __init__(self):
         AbstractBlocks.__init__(self)
-        self.open = []  # A stack of the current and parent lists.
+        self.open = []  # A stack of the current and parent core.g.lists.
         self.tags={}    # List tags dictionary. Each entry is a tags AttrDict.
         self.terminators=None    # List of compiled re's.
     def initialize(self):
         self.terminators = [
                 re.compile(r'^\+$|^$'),
                 re.compile(AttributeList.pattern),
-                re.compile(lists.delimiters),
+                re.compile(core.g.lists.delimiters),
                 re.compile(blocks.delimiters),
                 re.compile(tables.delimiters),
                 re.compile(tables_OLD.delimiters),
@@ -4681,7 +4681,7 @@ class Config:
         self.parse_replacements('replacements3')
         self.parse_specialsections()
         core.g.paragraphs.load(sections)
-        lists.load(sections)
+        core.g.lists.load(sections)
         blocks.load(sections)
         tables_OLD.load(sections)
         tables.load(sections)
@@ -4842,7 +4842,7 @@ class Config:
         configuration files have been loaded."""
         core.g.message.linenos = False     # Disable document line numbers.
         # Heuristic to validate that at least one configuration file was loaded.
-        if not self.specialchars or not self.tags or not lists:
+        if not self.specialchars or not self.tags or not core.g.lists:
             raise EAsciiDoc('incomplete configuration files')
         # Check special characters are only one character long.
         for k in self.specialchars.keys():
@@ -4872,7 +4872,7 @@ class Config:
             elif not v in self.sections:
                 core.g.message.warning('missing specialsections section: [%s]' % v)
         core.g.paragraphs.validate()
-        lists.validate()
+        core.g.lists.validate()
         blocks.validate()
         tables_OLD.validate()
         tables.validate()
@@ -4926,7 +4926,7 @@ class Config:
             d[k] = '%s|%s' % v
         dump_section('tags',d)
         core.g.paragraphs.dump()
-        lists.dump()
+        core.g.lists.dump()
         blocks.dump()
         tables_OLD.dump()
         tables.dump()
@@ -5114,7 +5114,7 @@ class Config:
         else:
             core.g.message.warning('missing section: [%s]' % section)
             body = ()
-        # Split macro body into start and end tag lists.
+        # Split macro body into start and end tag core.g.lists.
         stag = []
         etag = []
         in_stag = True
@@ -5868,13 +5868,13 @@ core.g.help_file = HELP_FILE
 
 # Globals
 # -------
-core.g.document = Document()    # The document being processed.
-core.g.config = Config()        # Configuration file reader.
-core.g.reader = Reader()        # Input stream line reader.
-core.g.writer = Writer()        # Output stream line writer.
-core.g.message = Message()      # Message functions.
-core.g.paragraphs = Paragraphs()   # Paragraph definitions.
-lists = Lists()             # List definitions.
+core.g.document = Document()        # The document being processed.
+core.g.config = Config()            # Configuration file reader.
+core.g.reader = Reader()            # Input stream line reader.
+core.g.writer = Writer()            # Output stream line writer.
+core.g.message = Message()          # Message functions.
+core.g.paragraphs = Paragraphs()    # Paragraph definitions.
+core.g.lists = Lists()              # List definitions.
 blocks = DelimitedBlocks()  # DelimitedBlock definitions.
 tables_OLD = Tables_OLD()   # Table_OLD definitions.
 tables = Tables()           # Table definitions.
@@ -6018,7 +6018,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         if core.g.document.attributes.get('blockname'):
             AbstractBlock.blocknames.append(core.g.document.attributes['blockname'])
         core.g.paragraphs.initialize()
-        lists.initialize()
+        core.g.lists.initialize()
         if core.g.config.dumping:
             core.g.config.dump()
         else:
