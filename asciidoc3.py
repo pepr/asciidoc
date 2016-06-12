@@ -109,7 +109,7 @@ class Trace:
         source text after substitution.
         The 'before' and 'after' messages are only printed if they differ.
         """
-        name_re = document.attributes.get('trace')
+        name_re = core.g.document.attributes.get('trace')
         if name_re == 'subs':    # Alias for all the inline substitutions.
             name_re = '|'.join(self.SUBS_NAMES)
         self.name_re = name_re
@@ -157,7 +157,7 @@ class Message:
 
     def warning(self, msg,linenos=True,offset=0):
         msg = self.format(msg,'WARNING: ',linenos,offset=offset)
-        document.has_warnings = True
+        core.g.document.has_warnings = True
         self.stderr(msg)
 
     def deprecated(self, msg, linenos=True):
@@ -184,7 +184,7 @@ class Message:
         else:
             msg = self.format(msg,'ERROR: ',cursor=cursor)
             self.stderr(msg)
-            document.has_errors = True
+            core.g.document.has_errors = True
 
     def unsafe(self, msg):
         self.error('unsafe: '+msg)
@@ -219,15 +219,15 @@ def file_in(fname, directory):
     return os.path.commonprefix((directory, fname)) == directory
 
 def safe():
-    return document.safe
+    return core.g.document.safe
 
 def is_safe_file(fname, directory=None):
     # A safe file must reside in 'directory' (defaults to the source
     # file directory).
     if directory is None:
-        if document.infile == '<stdin>':
+        if core.g.document.infile == '<stdin>':
            return not safe()
-        directory = os.path.dirname(document.infile)
+        directory = os.path.dirname(core.g.document.infile)
     elif directory == '':
         directory = '.'
     return (
@@ -750,7 +750,7 @@ def filter_lines(filter_cmd, lines, attrs={}):
     if not os.path.dirname(cmd):
         # Filter command has no directory path so search filter directories.
         filtername = attrs.get('style')
-        d = document.attributes.get('docdir')
+        d = core.g.document.attributes.get('docdir')
         if d:
             found = findfilter(filtername, d, cmd)
         if not found:
@@ -770,7 +770,7 @@ def filter_lines(filter_cmd, lines, attrs={}):
         filter_cmd = '"' + found + '"' + mo.group('tail')
     if found:
         if cmd.endswith('.py'):
-            filter_cmd = '"%s" %s' % (document.attributes['python'],
+            filter_cmd = '"%s" %s' % (core.g.document.attributes['python'],
                 filter_cmd)
         elif cmd.endswith('.rb'):
             filter_cmd = 'ruby ' + filter_cmd
@@ -864,7 +864,7 @@ def system(name, args, is_macro=False, attrs=None):
                 message.warning('%s: non-zero exit status' % syntax)
             try:
                 if os.path.isfile(tmp):
-                    f = open(tmp, 'r', encoding=document.attributes['encoding'])
+                    f = open(tmp, 'r', encoding=core.g.document.attributes['encoding'])
                     try:
                         lines = [s.rstrip() for s in f]
                     finally:
@@ -887,7 +887,7 @@ def system(name, args, is_macro=False, attrs=None):
         if not is_name(attr):
             message.warning('%s: illegal attribute name' % syntax)
             return None
-        value = document.attributes.get(attr)
+        value = core.g.document.attributes.get(attr)
         if value:
             if not re.match(r'^\d+$', value) and len(value) > 1:
                 message.warning('%s: illegal counter value: %s'
@@ -906,7 +906,7 @@ def system(name, args, is_macro=False, attrs=None):
                 result = seed
             else:
                 result = '1'
-        document.attributes[attr] = result
+        core.g.document.attributes[attr] = result
         if attrs is not None:
             attrs[attr] = result
         if name == 'counter2':
@@ -926,7 +926,7 @@ def system(name, args, is_macro=False, attrs=None):
             if attrs is not None:
                 attrs[attr] = value
             if name != 'set2':  # set2 only updates local attributes.
-                document.attributes[attr] = value
+                core.g.document.attributes[attr] = value
         if value is None:
             result = None
         else:
@@ -937,7 +937,7 @@ def system(name, args, is_macro=False, attrs=None):
         elif not is_safe_file(args):
             message.unsafe(syntax)
         else:
-            f = open(args, 'r', encoding=document.attributes['encoding'])
+            f = open(args, 'r', encoding=core.g.document.attributes['encoding'])
             try:
                 result = [s.rstrip() for s in f]
             finally:
@@ -969,7 +969,7 @@ def system(name, args, is_macro=False, attrs=None):
 
 def subs_attrs(lines, dictionary=None):
     """Substitute 'lines' of text with attributes from the global
-    document.attributes dictionary and from 'dictionary' ('dictionary'
+    core.g.document.attributes dictionary and from 'dictionary' ('dictionary'
     entries take precedence). Return a tuple of the substituted lines.  'lines'
     containing undefined attributes are deleted. If 'lines' is a string then
     return a string.
@@ -1000,12 +1000,12 @@ def subs_attrs(lines, dictionary=None):
     else:
         string_result = False
     if dictionary is None:
-        attrs = document.attributes
+        attrs = core.g.document.attributes
     else:
         # Remove numbered document attributes so they don't clash with
         # attribute list positional attributes.
         attrs = {}
-        for k,v in document.attributes.items():
+        for k,v in core.g.document.attributes.items():
             if not re.match(r'^\d+$', k):
                 attrs[k] = v
         # Substitute attribute references inside dictionary values.
@@ -1291,7 +1291,7 @@ class Lex:
         """Perform substitution specified in 'options' (in 'options' order)."""
         if not s:
             return s
-        if document.attributes.get('plaintext') is not None:
+        if core.g.document.attributes.get('plaintext') is not None:
             options = ('specialcharacters',)
         result = s
         options = Lex.canonical_subs(options)
@@ -1697,11 +1697,11 @@ class Header:
     @staticmethod
     def parse():
         assert Lex.next() is Title and Title.level == 0
-        attrs = document.attributes # Alias for readability.
+        attrs = core.g.document.attributes # Alias for readability.
         # Postpone title subs until backend conf files have been loaded.
         Title.translate(skipsubs=True)
         attrs['doctitle'] = Title.attributes['title']
-        document.consume_attributes_and_comments(noblanks=True)
+        core.g.document.consume_attributes_and_comments(noblanks=True)
         s = reader.read_next()
         mo = None
         if s:
@@ -1710,8 +1710,8 @@ class Header:
             s = reader.read()
             mo = re.match(Header.RCS_ID_RE,s)
             if not mo:
-                document.parse_author(s)
-                document.consume_attributes_and_comments(noblanks=True)
+                core.g.document.parse_author(s)
+                core.g.document.consume_attributes_and_comments(noblanks=True)
                 if reader.read_next():
                     # Process second header line after the title that is not a
                     # comment or an attribute entry.
@@ -1721,7 +1721,7 @@ class Header:
                         mo = re.match(Header.RCS_ID_RE,s)
                         if not mo:
                             mo = re.match(Header.REV_LINE_RE,s)
-            document.consume_attributes_and_comments(noblanks=True)
+            core.g.document.consume_attributes_and_comments(noblanks=True)
         s = attrs.get('revnumber')
         if s:
             mo = re.match(Header.RCS_ID_RE,s)
@@ -1731,13 +1731,13 @@ class Header:
                 attrs['revnumber'] = revnumber.strip()
             author = mo.groupdict().get('author')
             if author and 'firstname' not in attrs:
-                document.parse_author(author)
+                core.g.document.parse_author(author)
             revremark = mo.groupdict().get('revremark')
             if revremark is not None:
                 revremark = [revremark]
                 # Revision remarks can continue on following lines.
                 while reader.read_next():
-                    if document.consume_attributes_and_comments(noblanks=True):
+                    if core.g.document.consume_attributes_and_comments(noblanks=True):
                         break
                     revremark.append(reader.read())
                 revremark = Lex.subs(revremark,['normal'])
@@ -1749,8 +1749,8 @@ class Header:
             elif revnumber or revremark:
                 # Set revision date to ensure valid DocBook revision.
                 attrs['revdate'] = attrs['docdate']
-        document.process_author_names()
-        if document.doctype == 'manpage':
+        core.g.document.process_author_names()
+        if core.g.document.doctype == 'manpage':
             # manpage title formatted like mantitle(manvolnum).
             mo = re.match(r'^(?P<mantitle>.*)\((?P<manvolnum>.*)\)$',
                           attrs['doctitle'])
@@ -1781,7 +1781,7 @@ class AttributeEntry:
     def isnext():
         result = False  # Assume not next.
         if not AttributeEntry.pattern:
-            pat = document.attributes.get('attributeentry-pattern')
+            pat = core.g.document.attributes.get('attributeentry-pattern')
             if not pat:
                 message.error("[attributes] missing 'attributeentry-pattern' entry")
             AttributeEntry.pattern = pat
@@ -1841,15 +1841,15 @@ class AttributeEntry:
                 else:
                     # Default substitution.
                     # DEPRECATED: attributeentry-subs
-                    attr.subs = document.attributes.get('attributeentry-subs',
+                    attr.subs = core.g.document.attributes.get('attributeentry-subs',
                                 'specialcharacters,attributes')
                 attr.subs = parse_options(attr.subs, SUBS_OPTIONS,
                             'illegal substitution option')
                 attr.value = Lex.subs((attr.value,), attr.subs)
                 attr.value = '\n'.join(attr.value)
-                document.attributes[attr.name] = attr.value
-            elif attr.name in document.attributes:
-                del document.attributes[attr.name]
+                core.g.document.attributes[attr.name] = attr.value
+            elif attr.name in core.g.document.attributes:
+                del core.g.document.attributes[attr.name]
             attr.attributes[attr.name] = attr.value
 
 class AttributeList:
@@ -1861,9 +1861,9 @@ class AttributeList:
         raise AssertionError('no class instances allowed')
     @staticmethod
     def initialize():
-        if not 'attributelist-pattern' in document.attributes:
+        if not 'attributelist-pattern' in core.g.document.attributes:
             message.error("[attributes] missing 'attributelist-pattern' entry")
-        AttributeList.pattern = document.attributes['attributelist-pattern']
+        AttributeList.pattern = core.g.document.attributes['attributelist-pattern']
     @staticmethod
     def isnext():
         result = False  # Assume not next.
@@ -2041,7 +2041,7 @@ class Title:
             for k,v in list(Title.attributes.items()):
                 if v is None: del Title.attributes[k]
         try:
-            Title.level += int(document.attributes.get('leveloffset','0'))
+            Title.level += int(core.g.document.attributes.get('leveloffset','0'))
         except:
             pass
         Title.attributes['level'] = str(Title.level)
@@ -2172,7 +2172,7 @@ class Section:
         """Set document level and write open section close tags up to level."""
         while Section.endtags and Section.endtags[-1][0] >= level:
             writer.write(Section.endtags.pop()[1],trace='section close')
-        document.level = level
+        core.g.document.level = level
     @staticmethod
     def gen_id(title):
         """
@@ -2186,15 +2186,15 @@ class Section:
         # Replace non-alpha numeric characters in title with underscores and
         # convert to lower case.
         base_id = re.sub(r'(?u)\W+', '_', title).strip('_').lower()
-        if 'ascii-ids' in document.attributes:
+        if 'ascii-ids' in core.g.document.attributes:
             # Replace non-ASCII characters with ASCII equivalents.
             import unicodedata
             base_id = unicodedata.normalize('NFKD', base_id).encode('ascii','ignore')
         # Prefix the ID name with idprefix attribute or underscore if not
         # defined. Prefix ensures the ID does not clash with existing IDs.
-        idprefix = document.attributes.get('idprefix','_')
+        idprefix = core.g.document.attributes.get('idprefix','_')
         if isinstance(base_id, bytes):
-            encoding = document.attributes.get('encoding', 'utf-8')
+            encoding = core.g.document.attributes.get('encoding', 'utf-8')
             base_id = base_id.decode(encoding)
         base_id = idprefix + base_id
         i = 1
@@ -2211,7 +2211,7 @@ class Section:
             i += 1
     @staticmethod
     def set_id():
-        if not document.attributes.get('sectids') is None \
+        if not core.g.document.attributes.get('sectids') is None \
                 and 'id' not in AttributeList.attrs:
             # Generate ids for sections.
             AttributeList.attrs['id'] = Section.gen_id(Title.attributes['title'])
@@ -2220,29 +2220,29 @@ class Section:
         assert Lex.next() is Title
         prev_sectname = Title.sectname
         Title.translate()
-        if Title.level == 0 and document.doctype != 'book':
+        if Title.level == 0 and core.g.document.doctype != 'book':
             message.error('only book doctypes can contain level 0 sections')
-        if Title.level > document.level \
-                and 'basebackend-docbook' in document.attributes \
+        if Title.level > core.g.document.level \
+                and 'basebackend-docbook' in core.g.document.attributes \
                 and prev_sectname in ('colophon','abstract', \
                     'dedication','glossary','bibliography'):
             message.error('%s section cannot contain sub-sections' % prev_sectname)
-        if Title.level > document.level+1:
+        if Title.level > core.g.document.level+1:
             # Sub-sections of multi-part book level zero Preface and Appendices
             # are meant to be out of sequence.
-            if document.doctype == 'book' \
-                    and document.level == 0 \
+            if core.g.document.doctype == 'book' \
+                    and core.g.document.level == 0 \
                     and Title.level == 2 \
                     and prev_sectname in ('preface','appendix'):
                 pass
             else:
                 message.warning('section title out of sequence: '
                     'expected level %d, got level %d'
-                    % (document.level+1, Title.level))
+                    % (core.g.document.level+1, Title.level))
         Section.set_id()
         Section.setlevel(Title.level)
-        if 'numbered' in document.attributes:
-            Title.attributes['sectnum'] = Title.getnumber(document.level)
+        if 'numbered' in core.g.document.attributes:
+            Title.attributes['sectnum'] = Title.getnumber(core.g.document.level)
         else:
             Title.attributes['sectnum'] = ''
         AttributeList.consume(Title.attributes)
@@ -2262,11 +2262,11 @@ class Section:
             next = Lex.next()
             isempty = False
         # The section is not empty if contains a subsection.
-        if next and isempty and Title.level > document.level:
+        if next and isempty and Title.level > core.g.document.level:
             isempty = False
         # Report empty sections if invalid markup will result.
         if isempty:
-            if document.backend == 'docbook' and Title.sectname != 'index':
+            if core.g.document.backend == 'docbook' and Title.sectname != 'index':
                 message.error('empty section is not valid')
 
 class AbstractBlock:
@@ -2498,7 +2498,7 @@ class AbstractBlock:
             blockname = self.attributes.get('style', self.short_name()).lower()
         trace('push blockname', blockname)
         self.blocknames.append(blockname)
-        document.attributes['blockname'] = blockname
+        core.g.document.attributes['blockname'] = blockname
 
     def pop_blockname(self):
         '''
@@ -2509,9 +2509,9 @@ class AbstractBlock:
         blockname = self.blocknames.pop()
         trace('pop blockname', blockname)
         if len(self.blocknames) == 0:
-            document.attributes['blockname'] = None
+            core.g.document.attributes['blockname'] = None
         else:
-            document.attributes['blockname'] = self.blocknames[-1]
+            core.g.document.attributes['blockname'] = self.blocknames[-1]
 
     def merge_attributes(self, attrs, params=[]):
         """Merge given attributes to the current block.
@@ -2676,7 +2676,7 @@ class Paragraph(AbstractBlock):
         body = [self.text] + list(body)
         presubs = self.parameters.presubs
         postsubs = self.parameters.postsubs
-        if document.attributes.get('plaintext') is None:
+        if core.g.document.attributes.get('plaintext') is None:
             body = Lex.set_margin(body) # Move body to left margin.
         body = Lex.subs(body,presubs)
         template = self.parameters.template
@@ -2923,7 +2923,7 @@ class List(AbstractBlock):
         # Process list till list syntax changes or there is a new title.
         while Lex.next() is self and not BlockTitle.title:
             self.ordinal += 1
-            document.attributes['listindex'] = str(self.ordinal)
+            core.g.document.attributes['listindex'] = str(self.ordinal)
             if self.type in ('numbered','callout'):
                 self.check_index()
             if self.type in ('bulleted','numbered','callout'):
@@ -2940,7 +2940,7 @@ class List(AbstractBlock):
             calloutmap.listclose()
         lists.open.pop()
         if len(lists.open):
-            document.attributes['listindex'] = str(lists.open[-1].ordinal)
+            core.g.document.attributes['listindex'] = str(lists.open[-1].ordinal)
         self.pop_blockname()
 
 class Lists(AbstractBlocks):
@@ -3261,8 +3261,8 @@ class Table(AbstractBlock):
                     self.error('illegal column spec: %s' % col,self.start)
         # Set column (and indirectly cell) default alignments.
         for col in self.columns:
-            col.halign = col.halign or halign or document.attributes.get('halign') or 'left'
-            col.valign = col.valign or valign or document.attributes.get('valign') or 'top'
+            col.halign = col.halign or halign or core.g.document.attributes.get('halign') or 'left'
+            col.valign = col.valign or valign or core.g.document.attributes.get('valign') or 'top'
         # Validate widths and calculate missing widths.
         n = 0; percents = 0; props = 0
         for col in self.columns:
@@ -3898,7 +3898,7 @@ class Macro:
             if name == 'image' and '1' in d:
                 d['alt'] = d['1']
             # Unescape special characters in LaTeX target file names.
-            if document.backend == 'latex' and 'target' in d and d['target']:
+            if core.g.document.backend == 'latex' and 'target' in d and d['target']:
                 if not '0' in d:
                     d['0'] = d['target']
                 d['target']= config.subs_specialchars_reverse(d['target'])
@@ -4077,8 +4077,8 @@ class Reader1:
             self.f = open(fname, 'rb')
             self.infile = fname
             self.indir = os.path.dirname(fname)
-        document.attributes['infile'] = self.infile
-        document.attributes['indir'] = self.indir
+        core.g.document.attributes['infile'] = self.infile
+        core.g.document.attributes['indir'] = self.indir
         self._lineno = 0            # The last line read from file object f.
         self.linebuffer = []
 
@@ -4107,7 +4107,7 @@ class Reader1:
             elif self._lineno == 0 and isinstance(linebytes, bytes) and linebytes.startswith(UTF8_BOM):
                 encoding = 'utf-8-sig'
             else:
-                encoding = document.attributes.get('encoding', 'utf-8')
+                encoding = core.g.document.attributes.get('encoding', 'utf-8')
 
             while linebytes:                  # while not EOF
                 self._lineno = self._lineno + 1
@@ -4120,7 +4120,7 @@ class Reader1:
                 # capture the encoding. ???PP this is quick hack and should be improved.
                 if s.startswith(':encoding:'):
                     encoding = s.split(':')[2].strip()
-                    document.attributes['encoding'] = encoding
+                    core.g.document.attributes['encoding'] = encoding
                 if self.tabsize != 0:
                     s = s.expandtabs(self.tabsize)
                 self.linebuffer.append((self.fname, self._lineno, s))
@@ -4162,7 +4162,7 @@ class Reader1:
                                 message.verbose('include1: ' + fname, linenos=False)
                                 # Store the include file in memory for later
                                 # retrieval by the {include1:} system attribute.
-                                f = open(fname, 'r', encoding=document.attributes['encoding'])
+                                f = open(fname, 'r', encoding=core.g.document.attributes['encoding'])
                                 try:
                                     config.include1[fname] = [
                                         s.rstrip() for s in f]
@@ -4215,8 +4215,8 @@ class Reader1:
             if self.parent:
                 self.closefile()
                 assign(self, self.parent)    # Restore parent reader.
-                document.attributes['infile'] = self.infile
-                document.attributes['indir'] = self.indir
+                core.g.document.attributes['infile'] = self.infile
+                core.g.document.attributes['indir'] = self.indir
                 return Reader1.eof(self)
             else:
                 return True
@@ -4295,7 +4295,7 @@ class Reader(Reader1):
             else:
                 if not target and name in ('ifdef', 'ifndef'):
                     raise EAsciiDoc('missing macro target: %s' % result)
-                defined = is_attr_defined(target, document.attributes)
+                defined = is_attr_defined(target, core.g.document.attributes)
                 if name == 'ifdef':
                     if attrlist:
                         if defined: return attrlist
@@ -4419,7 +4419,7 @@ class Writer:
         if fname == '<stdout>':
             self.f = sys.stdout
         else:
-            encoding = document.attributes['encoding']
+            encoding = core.g.document.attributes['encoding']
             if encoding == 'utf-8-sig':
                 encoding = 'utf-8'
             self.f = open(fname, 'w', encoding=encoding)
@@ -4632,7 +4632,7 @@ class Config:
         if not include:
             # If all sections are loaded mark this file as loaded.
             self.loaded.append(os.path.realpath(fname))
-        document.update_attributes(attrs) # So they are available immediately.
+        core.g.document.update_attributes(attrs) # So they are available immediately.
         return True
 
     def load_sections(self,sections,attrs=None):
@@ -4740,10 +4740,10 @@ class Config:
         result = None
         if dirs is None:
             dirs = self.get_load_dirs()
-        conf = document.backend + '.conf'
-        conf2 = document.backend + '-' + document.doctype + '.conf'
+        conf = core.g.document.backend + '.conf'
+        conf2 = core.g.document.backend + '-' + core.g.document.doctype + '.conf'
         # First search for filter backends.
-        for d in [os.path.join(d, 'backends', document.backend) for d in dirs]:
+        for d in [os.path.join(d, 'backends', core.g.document.backend) for d in dirs]:
             if self.load_file(conf,d):
                 result = os.path.join(d, conf)
             self.load_file(conf2,d)
@@ -4789,14 +4789,14 @@ class Config:
         return None
 
     def set_theme_attributes(self):
-        theme = document.attributes.get('theme')
-        if theme and 'themedir' not in document.attributes:
+        theme = core.g.document.attributes.get('theme')
+        if theme and 'themedir' not in core.g.document.attributes:
             themedir = self.find_config_dir('themes', theme)
             if themedir:
-                document.attributes['themedir'] = themedir
+                core.g.document.attributes['themedir'] = themedir
                 iconsdir = os.path.join(themedir, 'icons')
-                if 'data-uri' in document.attributes and os.path.isdir(iconsdir):
-                    document.attributes['iconsdir'] = iconsdir
+                if 'data-uri' in core.g.document.attributes and os.path.isdir(iconsdir):
+                    core.g.document.attributes['iconsdir'] = iconsdir
             else:
                 message.warning('missing theme: %s' % theme, linenos=False)
 
@@ -4895,7 +4895,7 @@ class Config:
         hdr = ''
         hdr = hdr + '#' + writer.newline
         hdr = hdr + '# Generated by AsciiDoc %s for %s %s.%s' % \
-            (VERSION,document.backend,document.doctype,writer.newline)
+            (VERSION,core.g.document.backend,core.g.document.doctype,writer.newline)
         t = time.asctime(time.localtime(time.time()))
         hdr = hdr + '# %s%s' % (t,writer.newline)
         hdr = hdr + '#' + writer.newline
@@ -4941,7 +4941,7 @@ class Config:
 
     def subs_section(self,section,d):
         """Section attribute substitution using attributes from
-        document.attributes and 'd'.  Lines containing undefinded
+        core.g.document.attributes and 'd'.  Lines containing undefinded
         attributes are deleted."""
         if section in self.sections:
             return subs_attrs(self.sections[section],d)
@@ -5856,9 +5856,9 @@ class Plugin:
 # ---------
 import core.g
 
-core.g.app_file = None             # This file's full path.
-core.g.app_dir = None              # This file's directory.
-core.g.user_dir = None             # ~/.asciidoc3
+core.g.app_file = None      # This file's full path.
+core.g.app_dir = None       # This file's directory.
+core.g.user_dir = None      # ~/.asciidoc3
 # Global configuration files directory (set by Makefile build target).
 CONF_DIR = '/etc/asciidoc3'
 HELP_FILE = 'help.conf'     # Default (English) help file.
@@ -5868,7 +5868,7 @@ core.g.help_file = HELP_FILE
 
 # Globals
 # -------
-document = Document()       # The document being processed.
+core.g.document = Document()    # The document being processed.
 config = Config()           # Configuration file reader.
 reader = Reader()           # Input stream line reader.
 writer = Writer()           # Output stream line writer.
@@ -5900,7 +5900,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         The configuration files are specified by the `'conf-files'`
         document attribute and on the command-line (closure for `confiles`).
         """
-        files = document.attributes.get('conf-files', '')
+        files = core.g.document.attributes.get('conf-files', '')
         files = [f.strip() for f in files.split('|') if f.strip()]
         files += confiles
         if files:
@@ -5911,7 +5911,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
                     raise EAsciiDoc('missing configuration file: %s' % f)
 
     try:
-        document.attributes['python'] = sys.executable
+        core.g.document.attributes['python'] = sys.executable
         for f in config.filters:
             if not config.find_config_dir('filters', f):
                 raise EAsciiDoc('missing filter: %s' % f)
@@ -5922,7 +5922,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             if o == '-c': config.dumping = True
             if o == '-s': config.header_footer = False
             if o == '-v': config.verbose = True
-        document.update_attributes()
+        core.g.document.update_attributes()
         if '-e' not in options:
             # Load asciidoc.conf files in two passes: the first for attributes
             # the second for everything. This is so that locally set attributes
@@ -5937,35 +5937,35 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
                                 include=['attributes','titles','specialchars'])
         else:
             load_conffiles(include=['attributes','titles','specialchars'])
-        document.update_attributes()
+        core.g.document.update_attributes()
         # Check the infile exists.
         if infile != '<stdin>':
             if not os.path.isfile(infile):
                 raise EAsciiDoc('input file %s missing' % infile)
-        document.infile = infile
+        core.g.document.infile = infile
         AttributeList.initialize()
         # Open input file and parse document header.
         reader.tabsize = config.tabsize
         reader.open(infile)
-        has_header = document.parse_header(doctype,backend)
+        has_header = core.g.document.parse_header(doctype,backend)
         # doctype is now finalized.
-        document.attributes['doctype-'+document.doctype] = ''
+        core.g.document.attributes['doctype-'+core.g.document.doctype] = ''
         config.set_theme_attributes()
         # Load backend configuration files.
         if '-e' not in options:
-            f = document.backend + '.conf'
+            f = core.g.document.backend + '.conf'
             conffile = config.load_backend()
             if not conffile:
                 raise EAsciiDoc('missing backend conf file: %s' % f)
-            document.attributes['backend-confdir'] = os.path.dirname(conffile)
+            core.g.document.attributes['backend-confdir'] = os.path.dirname(conffile)
         # backend is now known.
-        document.attributes['backend-'+document.backend] = ''
-        document.attributes[document.backend+'-'+document.doctype] = ''
+        core.g.document.attributes['backend-'+core.g.document.backend] = ''
+        core.g.document.attributes[core.g.document.backend+'-'+core.g.document.doctype] = ''
         doc_conffiles = []
         if '-e' not in options:
             # Load filters and language file.
             config.load_filters()
-            document.load_lang()
+            core.g.document.load_lang()
             if infile != '<stdin>':
                 # Load local conf files (files in the source file directory).
                 config.load_file('asciidoc.conf', indir)
@@ -5974,7 +5974,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
                 # Load document specific configuration files.
                 f = os.path.splitext(infile)[0]
                 doc_conffiles = [
-                        f for f in (f+'.conf', f+'-'+document.backend+'.conf')
+                        f for f in (f+'.conf', f+'-'+core.g.document.backend+'.conf')
                         if os.path.isfile(f) ]
                 for f in doc_conffiles:
                     config.load_file(f)
@@ -5995,28 +5995,28 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
                 args += ' --attribute "%s=%s"' % (k,v)
             else:
                 args += ' --attribute "%s"' % k
-        document.attributes['asciidoc-args'] = args
+        core.g.document.attributes['asciidoc-args'] = args
         # Build outfile name.
         if outfile is None:
-            outfile = os.path.splitext(infile)[0] + '.' + document.backend
+            outfile = os.path.splitext(infile)[0] + '.' + core.g.document.backend
             if config.outfilesuffix:
                 # Change file extension.
                 outfile = os.path.splitext(outfile)[0] + config.outfilesuffix
-        document.outfile = outfile
+        core.g.document.outfile = outfile
         # Document header attributes override conf file attributes.
-        document.attributes.update(AttributeEntry.attributes)
-        document.update_attributes()
+        core.g.document.attributes.update(AttributeEntry.attributes)
+        core.g.document.update_attributes()
         # Set the default embedded icons directory.
-        if 'data-uri' in  document.attributes and not os.path.isdir(document.attributes['iconsdir']):
-            document.attributes['iconsdir'] = os.path.join(
-                     document.attributes['asciidoc-confdir'], 'images/icons')
+        if 'data-uri' in  core.g.document.attributes and not os.path.isdir(core.g.document.attributes['iconsdir']):
+            core.g.document.attributes['iconsdir'] = os.path.join(
+                     core.g.document.attributes['asciidoc-confdir'], 'images/icons')
         # Configuration is fully loaded.
         config.expand_all_templates()
         # Check configuration for consistency.
         config.validate()
         # Initialize top level block name.
-        if document.attributes.get('blockname'):
-            AbstractBlock.blocknames.append(document.attributes['blockname'])
+        if core.g.document.attributes.get('blockname'):
+            AbstractBlock.blocknames.append(core.g.document.attributes['blockname'])
         paragraphs.initialize()
         lists.initialize()
         if config.dumping:
@@ -6026,7 +6026,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             try:
                 writer.open(outfile)
                 try:
-                    document.translate(has_header) # Generate the output.
+                    core.g.document.translate(has_header) # Generate the output.
                 finally:
                     writer.close()
             finally:
@@ -6134,9 +6134,9 @@ def execute(cmd, opts, args):
             help_option = True
         #DEPRECATED: --unsafe option.
         if o == '--unsafe':
-            document.safe = False
+            core.g.document.safe = False
         if o == '--safe':
-            document.safe = True
+            core.g.document.safe = True
         if o == '--version':
             print('asciidoc %s' % VERSION)
             sys.exit(0)
@@ -6166,7 +6166,7 @@ def execute(cmd, opts, args):
             k,v = e
             # A @ suffix denotes don't override existing document attributes.
             if v and v[-1] == '@':
-                document.attributes[k] = v[:-1]
+                core.g.document.attributes[k] = v[:-1]
             else:
                 config.cmd_attrs[k] = v
         if o in ('-o','--out-file'):
@@ -6209,7 +6209,7 @@ def execute(cmd, opts, args):
             outfile = '<stdout>'
         # Do the work.
         asciidoc(backend, doctype, confiles, infile, outfile, options)
-        if document.has_errors:
+        if core.g.document.has_errors:
             sys.exit(1)
     finally:
         sys.stdin,sys.stdout = stdin,stdout
