@@ -1266,9 +1266,9 @@ class Lex:
         elif tables.isnext():
             result = tables.current
         else:
-            if not paragraphs.isnext():
+            if not core.g.paragraphs.isnext():
                 raise EAsciiDoc('paragraph expected')
-            result = paragraphs.current
+            result = core.g.paragraphs.current
         # Optimization: Cache answer.
         Lex.prev_cursor = core.g.reader.cursor
         Lex.prev_element = result
@@ -2670,7 +2670,7 @@ class Paragraph(AbstractBlock):
         AttributeList.consume(attrs)
         self.merge_attributes(attrs)
         core.g.reader.read()   # Discard (already parsed item first line).
-        body = core.g.reader.read_until(paragraphs.terminators)
+        body = core.g.reader.read_until(core.g.paragraphs.terminators)
         if 'skip' in self.parameters.options:
             return
         body = [self.text] + list(body)
@@ -4680,7 +4680,7 @@ class Config:
         self.parse_replacements('replacements2')
         self.parse_replacements('replacements3')
         self.parse_specialsections()
-        paragraphs.load(sections)
+        core.g.paragraphs.load(sections)
         lists.load(sections)
         blocks.load(sections)
         tables_OLD.load(sections)
@@ -4871,7 +4871,7 @@ class Config:
                 del self.specialsections[k]
             elif not v in self.sections:
                 core.g.message.warning('missing specialsections section: [%s]' % v)
-        paragraphs.validate()
+        core.g.paragraphs.validate()
         lists.validate()
         blocks.validate()
         tables_OLD.validate()
@@ -4925,7 +4925,7 @@ class Config:
         for k,v in self.tags.items():
             d[k] = '%s|%s' % v
         dump_section('tags',d)
-        paragraphs.dump()
+        core.g.paragraphs.dump()
         lists.dump()
         blocks.dump()
         tables_OLD.dump()
@@ -5873,7 +5873,7 @@ core.g.config = Config()        # Configuration file reader.
 core.g.reader = Reader()        # Input stream line reader.
 core.g.writer = Writer()        # Output stream line writer.
 core.g.message = Message()      # Message functions.
-paragraphs = Paragraphs()   # Paragraph definitions.
+core.g.paragraphs = Paragraphs()   # Paragraph definitions.
 lists = Lists()             # List definitions.
 blocks = DelimitedBlocks()  # DelimitedBlock definitions.
 tables_OLD = Tables_OLD()   # Table_OLD definitions.
@@ -6017,7 +6017,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         # Initialize top level block name.
         if core.g.document.attributes.get('blockname'):
             AbstractBlock.blocknames.append(core.g.document.attributes['blockname'])
-        paragraphs.initialize()
+        core.g.paragraphs.initialize()
         lists.initialize()
         if core.g.config.dumping:
             core.g.config.dump()
