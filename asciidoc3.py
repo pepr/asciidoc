@@ -1259,8 +1259,8 @@ class Lex:
             result = macros.current
         elif core.g.lists.isnext():
             result = core.g.lists.current
-        elif blocks.isnext():
-            result = blocks.current
+        elif core.g.blocks.isnext():
+            result = core.g.blocks.current
         elif tables_OLD.isnext():
             result = tables_OLD.current
         elif tables.isnext():
@@ -1490,10 +1490,10 @@ class Document:
         while not finished:
             finished = True
             if noblanks and not core.g.reader.read_next(): return result
-            if blocks.isnext() and 'skip' in blocks.current.options:
+            if core.g.blocks.isnext() and 'skip' in core.g.blocks.current.options:
                 result = True
                 finished = False
-                blocks.current.translate()
+                core.g.blocks.current.translate()
             if noblanks and not core.g.reader.read_next(): return result
             if macros.isnext() and macros.current.name == 'comment':
                 result = True
@@ -2274,7 +2274,7 @@ class AbstractBlock:
     blocknames = [] # Global stack of names for push_blockname() and pop_blockname().
 
     def __init__(self):
-        # Configuration parameter names common to all blocks.
+        # Configuration parameter names common to all core.g.blocks.
         self.CONF_ENTRIES = ('delimiter', 'options', 'subs', 'presubs', 'postsubs',
                              'posattrs', 'style', '.*-style', 'template', 'filter')
         self.start = None       # File reader cursor at start delimiter.
@@ -2700,7 +2700,7 @@ class Paragraphs(AbstractBlocks):
         self.terminators = [
                 re.compile(r'^\+$|^$'),
                 re.compile(AttributeList.pattern),
-                re.compile(blocks.delimiters),
+                re.compile(core.g.blocks.delimiters),
                 re.compile(tables.delimiters),
                 re.compile(tables_OLD.delimiters),
             ]
@@ -2959,7 +2959,7 @@ class Lists(AbstractBlocks):
                 re.compile(r'^\+$|^$'),
                 re.compile(AttributeList.pattern),
                 re.compile(core.g.lists.delimiters),
-                re.compile(blocks.delimiters),
+                re.compile(core.g.blocks.delimiters),
                 re.compile(tables.delimiters),
                 re.compile(tables_OLD.delimiters),
             ]
@@ -3053,7 +3053,7 @@ class DelimitedBlock(AbstractBlock):
         self.pop_blockname()
 
 class DelimitedBlocks(AbstractBlocks):
-    """List of delimited blocks."""
+    """List of delimited core.g.blocks."""
     BLOCK_TYPE = DelimitedBlock
     PREFIX = 'blockdef-'
     def __init__(self):
@@ -4682,7 +4682,7 @@ class Config:
         self.parse_specialsections()
         core.g.paragraphs.load(sections)
         core.g.lists.load(sections)
-        blocks.load(sections)
+        core.g.blocks.load(sections)
         tables_OLD.load(sections)
         tables.load(sections)
         macros.load(sections.get('macros',()))
@@ -4873,7 +4873,7 @@ class Config:
                 core.g.message.warning('missing specialsections section: [%s]' % v)
         core.g.paragraphs.validate()
         core.g.lists.validate()
-        blocks.validate()
+        core.g.blocks.validate()
         tables_OLD.validate()
         tables.validate()
         macros.validate()
@@ -4927,7 +4927,7 @@ class Config:
         dump_section('tags',d)
         core.g.paragraphs.dump()
         core.g.lists.dump()
-        blocks.dump()
+        core.g.blocks.dump()
         tables_OLD.dump()
         tables.dump()
         macros.dump()
@@ -5875,7 +5875,7 @@ core.g.writer = Writer()            # Output stream line writer.
 core.g.message = Message()          # Message functions.
 core.g.paragraphs = Paragraphs()    # Paragraph definitions.
 core.g.lists = Lists()              # List definitions.
-blocks = DelimitedBlocks()  # DelimitedBlock definitions.
+core.g.blocks = DelimitedBlocks()   # DelimitedBlock definitions.
 tables_OLD = Tables_OLD()   # Table_OLD definitions.
 tables = Tables()           # Table definitions.
 macros = Macros()           # Macro definitions.
