@@ -680,7 +680,7 @@ def dump_section(name,dict,f=sys.stdout):
         if s[0] == '#':
             s = '\\' + s    # Escape so not treated as comment lines.
         f.write('%s%s' % (s,writer.newline))
-    f.write(writer.newline)
+    f.write(core.g.writer.newline)
 
 def update_attrs(attrs,dict):
     """Update 'attrs' dictionary with parsed attributes in dictionary 'dict'."""
@@ -814,7 +814,7 @@ def system(name, args, is_macro=False, attrs=None):
         separator = '\n'
     else:
         syntax = '{%s:%s}' % (name,args)
-        separator = writer.newline
+        separator = core.g.writer.newline
     if name not in ('eval','eval3','sys','sys2','sys3','include','include1','counter','counter2','set','set2','template'):
         if is_macro:
             msg = 'illegal system macro name: %s' % name
@@ -1582,7 +1582,7 @@ class Document:
             self.attributes['doctitle'] = Title.dosubs(self.attributes['doctitle'])
             if core.g.config.header_footer:
                 hdr = core.g.config.subs_section('header',{})
-                writer.write(hdr,trace='header')
+                core.g.writer.write(hdr,trace='header')
             if 'title' in self.attributes:
                 del self.attributes['title']
             self.consume_attributes_and_comments()
@@ -1591,16 +1591,16 @@ class Document:
                 # and first section title).
                 if Lex.next() is not Title:
                     stag,etag = core.g.config.section2tags('preamble')
-                    writer.write(stag,trace='preamble open')
+                    core.g.writer.write(stag,trace='preamble open')
                     Section.translate_body()
-                    writer.write(etag,trace='preamble close')
+                    core.g.writer.write(etag,trace='preamble close')
             elif self.doctype == 'manpage' and 'name' in core.g.config.sections:
-                writer.write(core.g.config.subs_section('name',{}), trace='name')
+                core.g.writer.write(core.g.config.subs_section('name',{}), trace='name')
         else:
             self.process_author_names()
             if core.g.config.header_footer:
                 hdr = core.g.config.subs_section('header',{})
-                writer.write(hdr,trace='header')
+                core.g.writer.write(hdr,trace='header')
             if Lex.next() is not Title:
                 Section.translate_body()
         # Process remaining sections.
@@ -1612,7 +1612,7 @@ class Document:
         # Substitute document parameters and write document footer.
         if core.g.config.header_footer:
             ftr = core.g.config.subs_section('footer',{})
-            writer.write(ftr,trace='footer')
+            core.g.writer.write(ftr,trace='footer')
     def parse_author(self,s):
         """ Return False if the author is malformed."""
         attrs = self.attributes # Alias for readability.
@@ -1936,7 +1936,7 @@ class BlockTitle:
         if not Title.subs:
             Title.subs = core.g.config.subsnormal
         s = Lex.subs((BlockTitle.title,), Title.subs)
-        s = writer.newline.join(s)
+        s = core.g.writer.newline.join(s)
         if not s:
             message.warning('blank block title')
         BlockTitle.title = s
@@ -1981,7 +1981,7 @@ class Title:
         if not Title.subs:
             Title.subs = core.g.config.subsnormal
         title = Lex.subs((title,), Title.subs)
-        title = writer.newline.join(title)
+        title = core.g.writer.newline.join(title)
         if not title:
             message.warning('blank section title')
         return title
@@ -2152,7 +2152,7 @@ class FloatingTitle(Title):
         template = 'floatingtitle'
         if template in core.g.config.sections:
             stag,etag = core.g.config.section2tags(template,Title.attributes)
-            writer.write(stag,trace='floating title')
+            core.g.writer.write(stag,trace='floating title')
         else:
             message.warning('missing template section: [%s]' % template)
 
@@ -2171,7 +2171,7 @@ class Section:
     def setlevel(level):
         """Set document level and write open section close tags up to level."""
         while Section.endtags and Section.endtags[-1][0] >= level:
-            writer.write(Section.endtags.pop()[1],trace='section close')
+            core.g.writer.write(Section.endtags.pop()[1],trace='section close')
         core.g.document.level = level
     @staticmethod
     def gen_id(title):
@@ -2248,7 +2248,7 @@ class Section:
         AttributeList.consume(Title.attributes)
         stag,etag = core.g.config.section2tags(Title.sectname,Title.attributes)
         Section.savetag(Title.level,etag)
-        writer.write(stag,trace='section open: level %d: %s' %
+        core.g.writer.write(stag,trace='section open: level %d: %s' %
                 (Title.level, Title.attributes['title']))
         Section.translate_body()
     @staticmethod
@@ -2687,7 +2687,7 @@ class Paragraph(AbstractBlock):
         body = Lex.subs(body,postsubs)
         etag = core.g.config.section2tags(template, self.attributes,skipstart=True)[1]
         # Write start tag, content, end tag.
-        writer.write(dovetail_tags(stag,body,etag),trace='paragraph')
+        core.g.writer.write(dovetail_tags(stag,body,etag),trace='paragraph')
 
 class Paragraphs(AbstractBlocks):
     """List of paragraph definitions."""
@@ -2762,29 +2762,29 @@ class List(AbstractBlock):
         assert self.type == 'labeled'
         entrytag = subs_tag(self.tag.entry, self.attributes)
         labeltag = subs_tag(self.tag.label, self.attributes)
-        writer.write(entrytag[0],trace='list entry open')
-        writer.write(labeltag[0],trace='list label open')
+        core.g.writer.write(entrytag[0],trace='list entry open')
+        core.g.writer.write(labeltag[0],trace='list label open')
         # Write labels.
         while Lex.next() is self:
             core.g.reader.read()   # Discard (already parsed item first line).
-            writer.write_tag(self.tag.term, [self.label],
+            core.g.writer.write_tag(self.tag.term, [self.label],
                              self.presubs, self.attributes,trace='list term')
             if self.text: break
-        writer.write(labeltag[1],trace='list label close')
+        core.g.writer.write(labeltag[1],trace='list label close')
         # Write item text.
         self.translate_item()
-        writer.write(entrytag[1],trace='list entry close')
+        core.g.writer.write(entrytag[1],trace='list entry close')
     def translate_item(self):
         if self.type == 'callout':
             self.attributes['coids'] = calloutmap.calloutids(self.ordinal)
         itemtag = subs_tag(self.tag.item, self.attributes)
-        writer.write(itemtag[0],trace='list item open')
+        core.g.writer.write(itemtag[0],trace='list item open')
         # Write ItemText.
         text = core.g.reader.read_until(lists.terminators)
         if self.text:
             text = [self.text] + list(text)
         if text:
-            writer.write_tag(self.tag.text, text, self.presubs, self.attributes,trace='list text')
+            core.g.writer.write_tag(self.tag.text, text, self.presubs, self.attributes,trace='list text')
         # Process explicit and implicit list item continuations.
         while True:
             continuation = core.g.reader.read_next() == '+'
@@ -2809,7 +2809,7 @@ class List(AbstractBlock):
                 next.translate()
             else:
                 break
-        writer.write(itemtag[1],trace='list item close')
+        core.g.writer.write(itemtag[1],trace='list item close')
 
     @staticmethod
     def calc_style(index):
@@ -2918,7 +2918,7 @@ class List(AbstractBlock):
                 self.error('illegal attribute value: width="%s"' % v)
         stag,etag = subs_tag(self.tag.list, self.attributes)
         if stag:
-            writer.write(stag,trace='list open')
+            core.g.writer.write(stag,trace='list open')
         self.ordinal = 0
         # Process list till list syntax changes or there is a new title.
         while Lex.next() is self and not BlockTitle.title:
@@ -2934,7 +2934,7 @@ class List(AbstractBlock):
             else:
                 raise AssertionError('illegal [%s] list type' % self.defname)
         if etag:
-            writer.write(etag,trace='list close')
+            core.g.writer.write(etag,trace='list close')
         if self.type == 'callout':
             calloutmap.validate(self.ordinal)
             calloutmap.listclose()
@@ -3029,9 +3029,9 @@ class DelimitedBlock(AbstractBlock):
             if 'sectionbody' in options:
                 # The body is treated like a section body.
                 stag,etag = core.g.config.section2tags(template,self.attributes)
-                writer.write(stag,trace=name+' open')
+                core.g.writer.write(stag,trace=name+' open')
                 Section.translate_body(self)
-                writer.write(etag,trace=name+' close')
+                core.g.writer.write(etag,trace=name+' close')
             else:
                 stag = core.g.config.section2tags(template,self.attributes,skipend=True)[0]
                 body = core.g.reader.read_until(self.delimiter,same_file=True)
@@ -3043,7 +3043,7 @@ class DelimitedBlock(AbstractBlock):
                 body = Lex.subs(body,postsubs)
                 # Write start tag, content, end tag.
                 etag = core.g.config.section2tags(template,self.attributes,skipstart=True)[1]
-                writer.write(dovetail_tags(stag,body,etag),trace=name)
+                core.g.writer.write(dovetail_tags(stag,body,etag),trace=name)
             trace(self.short_name()+' block close',etag)
         if core.g.reader.eof():
             self.error('missing closing delimiter',self.start)
@@ -3327,7 +3327,7 @@ class Table(AbstractBlock):
                     cols.append(s)
             i += 1
         if cols:
-            self.attributes['colspecs'] = writer.newline.join(cols)
+            self.attributes['colspecs'] = core.g.writer.newline.join(cols)
     def parse_rows(self, text):
         """
         Parse the table source text into self.rows (a list of rows, each row
@@ -3410,7 +3410,7 @@ class Table(AbstractBlock):
             result.append(stag)
             result += self.subs_row(row,rowtype)
             result.append(etag)
-        return writer.newline.join(result)
+        return core.g.writer.newline.join(result)
     def subs_row(self, row, rowtype):
         """
         Substitute the list of Cells using the data tag.
@@ -3605,7 +3605,7 @@ class Table(AbstractBlock):
             self.attributes['bodyrows'] = '\x07bodyrows\x07'
         table = subs_attrs(core.g.config.sections[self.parameters.template],
                            self.attributes)
-        table = writer.newline.join(table)
+        table = core.g.writer.newline.join(table)
         # Before we finish replace the table head, foot and body place holders
         # with the real data.
         if headrows:
@@ -3614,7 +3614,7 @@ class Table(AbstractBlock):
             table = table.replace('\x07footrows\x07', footrows, 1)
         if bodyrows:
             table = table.replace('\x07bodyrows\x07', bodyrows, 1)
-        writer.write(table,trace='table')
+        core.g.writer.write(table,trace='table')
         self.pop_blockname()
 
 class Tables(AbstractBlocks):
@@ -3918,7 +3918,7 @@ class Macro:
                 result = body[0]
             else:
                 if self.prefix == '#':
-                    result = writer.newline.join(body)
+                    result = core.g.writer.newline.join(body)
                 else:
                     # Internally processed inline macros use UNIX line
                     # separator.
@@ -3943,7 +3943,7 @@ class Macro:
                 s = macros.restore_passthroughs(s)
             if s:
                 trace('macro block',before,s)
-                writer.write(s)
+                core.g.writer.write(s)
 
     def subs_passthroughs(self, text, passthroughs):
         """ Replace macro attribute lists in text with placeholders.
@@ -4423,7 +4423,7 @@ class Writer:
             if encoding == 'utf-8-sig':
                 encoding = 'utf-8'
             self.f = open(fname, 'w', encoding=encoding)
-        message.verbose('writing: ' + writer.fname, False)
+        message.verbose('writing: ' + core.g.writer.fname, False)
         self.lines_out = 0
 
     def close(self):
@@ -4494,7 +4494,7 @@ def _subs_specialwords(mo):
     elif len(lines) == 1:
         result = lines[0]
     else:
-        result = writer.newline.join(lines)
+        result = core.g.writer.newline.join(lines)
     return result
 
 class Config:
@@ -4893,12 +4893,12 @@ class Config:
         """Dump configuration to stdout."""
         # Header.
         hdr = ''
-        hdr = hdr + '#' + writer.newline
+        hdr = hdr + '#' + core.g.writer.newline
         hdr = hdr + '# Generated by AsciiDoc %s for %s %s.%s' % \
             (VERSION,core.g.document.backend,core.g.document.doctype,writer.newline)
         t = time.asctime(time.localtime(time.time()))
         hdr = hdr + '# %s%s' % (t,writer.newline)
-        hdr = hdr + '#' + writer.newline
+        hdr = hdr + '#' + core.g.writer.newline
         sys.stdout.write(hdr)
         # Dump special sections.
         # Dump only the configuration file and command-line attributes.
@@ -4937,7 +4937,7 @@ class Config:
                 sys.stdout.write('[%s]%s' % (k,writer.newline))
                 for line in self.sections[k]:
                     sys.stdout.write('%s%s' % (line,writer.newline))
-                sys.stdout.write(writer.newline)
+                sys.stdout.write(core.g.writer.newline)
 
     def subs_section(self,section,d):
         """Section attribute substitution using attributes from
@@ -5380,7 +5380,7 @@ class Table_OLD(AbstractBlock):
                     message.warning('colspec dropped: contains undefined attribute')
                 else:
                     cols.append(s)
-            self.attributes['colspecs'] = writer.newline.join(cols)
+            self.attributes['colspecs'] = core.g.writer.newline.join(cols)
     def split_rows(self,rows):
         """Return a two item tuple containing a list of lines up to but not
         including the next underline (continued lines are joined ) and the
@@ -5442,7 +5442,7 @@ class Table_OLD(AbstractBlock):
             if 'replacements2' in subs:
                 # Insert line breaks in cell data.
                 d = re.sub(r'(?m)\n',r' +\n',d)
-                d = d.split('\n')    # So writer.newline is written.
+                d = d.split('\n')    # So core.g.writer.newline is written.
             else:
                 d = [d]
             result = result + [stag] + Lex.subs(d,subs) + [etag]
@@ -5564,17 +5564,17 @@ class Table_OLD(AbstractBlock):
                 footrows,table = self.split_rows(table)
         if headrows:
             headrows = self.parse_rows(headrows, self.headrow, self.headdata)
-            headrows = writer.newline.join(headrows)
+            headrows = core.g.writer.newline.join(headrows)
             self.attributes['headrows'] = '\x07headrows\x07'
         if footrows:
             footrows = self.parse_rows(footrows, self.footrow, self.footdata)
-            footrows = writer.newline.join(footrows)
+            footrows = core.g.writer.newline.join(footrows)
             self.attributes['footrows'] = '\x07footrows\x07'
         bodyrows = self.parse_rows(bodyrows, self.bodyrow, self.bodydata)
-        bodyrows = writer.newline.join(bodyrows)
+        bodyrows = core.g.writer.newline.join(bodyrows)
         self.attributes['bodyrows'] = '\x07bodyrows\x07'
         table = subs_attrs(core.g.config.sections[self.template],self.attributes)
-        table = writer.newline.join(table)
+        table = core.g.writer.newline.join(table)
         # Before we finish replace the table head, foot and body place holders
         # with the real data.
         if headrows:
@@ -5582,7 +5582,7 @@ class Table_OLD(AbstractBlock):
         if footrows:
             table = table.replace('\x07footrows\x07', footrows, 1)
         table = table.replace('\x07bodyrows\x07', bodyrows, 1)
-        writer.write(table,trace='table')
+        core.g.writer.write(table,trace='table')
         self.pop_blockname()
 
 class Tables_OLD(AbstractBlocks):
@@ -5871,7 +5871,7 @@ core.g.help_file = HELP_FILE
 core.g.document = Document()    # The document being processed.
 core.g.config = Config()        # Configuration file reader.
 core.g.reader = Reader()        # Input stream line reader.
-writer = Writer()           # Output stream line writer.
+core.g.writer = Writer()        # Output stream line writer.
 message = Message()         # Message functions.
 paragraphs = Paragraphs()   # Paragraph definitions.
 lists = Lists()             # List definitions.
@@ -6022,13 +6022,13 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         if core.g.config.dumping:
             core.g.config.dump()
         else:
-            writer.newline = core.g.config.newline
+            core.g.writer.newline = core.g.config.newline
             try:
-                writer.open(outfile)
+                core.g.writer.open(outfile)
                 try:
                     core.g.document.translate(has_header) # Generate the output.
                 finally:
-                    writer.close()
+                    core.g.writer.close()
             finally:
                 core.g.reader.closefile()
     except KeyboardInterrupt:
