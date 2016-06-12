@@ -151,7 +151,7 @@ class Message:
         self.prev_msg = msg
 
     def verbose(self, msg,linenos=True):
-        if config.verbose:
+        if core.g.config.verbose:
             msg = self.format(msg,linenos=linenos)
             self.stderr(msg)
 
@@ -540,7 +540,7 @@ def is_name(s):
 def subs_quotes(text):
     """Quoted text is marked up and the resulting text is
     returned."""
-    keys = list(config.quotes.keys())
+    keys = list(core.g.config.quotes.keys())
     for q in keys:
         i = q.find('|')
         if i != -1 and q != '|' and q != '||':
@@ -548,7 +548,7 @@ def subs_quotes(text):
             rq = q[i+1:]    # Right quote.
         else:
             lq = rq = q
-        tag = config.quotes[q]
+        tag = core.g.config.quotes[q]
         if not tag: continue
         # Unconstrained quotes prefix the tag name with a hash.
         if tag[0] == '#':
@@ -576,7 +576,7 @@ def subs_quotes(text):
             else:
                 attrlist = {}
                 parse_attributes(mo.group('attrlist'), attrlist)
-                stag,etag = config.tag(tag, attrlist)
+                stag,etag = core.g.config.tag(tag, attrlist)
                 s = mo.group(1) + stag + mo.group('content') + etag
                 text = text[:mo.start()] + s + text[mo.end():]
                 pos = mo.start() + len(s)
@@ -654,7 +654,7 @@ def parse_entries(entries, dict, unquote=False, unique_values=False,
         allow_name_only=False,escape_delimiter=True):
     """Parse name=value entries from  from lines of text in 'entries' into
     dictionary 'dict'. Blank lines are skipped."""
-    entries = config.expand_templates(entries)
+    entries = core.g.config.expand_templates(entries)
     for entry in entries:
         if entry and not parse_entry(entry, dict, unquote, unique_values,
                 allow_name_only, escape_delimiter):
@@ -949,13 +949,13 @@ def system(name, args, is_macro=False, attrs=None):
             else:
                 result = ''
     elif name == 'include1':
-        result = separator.join(config.include1[args])
+        result = separator.join(core.g.config.include1[args])
     elif name == 'template':
-        if not args in config.sections:
+        if not args in core.g.config.sections:
             message.warning('%s: template does not exist' % syntax)
         else:
             result = []
-            for line in  config.sections[args]:
+            for line in  core.g.config.sections[args]:
                 line = subs_attrs(line)
                 if line is not None:
                     result.append(line)
@@ -1281,9 +1281,9 @@ class Lex:
             if options[0] == 'none':
                 options = ()
             elif options[0] == 'normal':
-                options = config.subsnormal
+                options = core.g.config.subsnormal
             elif options[0] == 'verbatim':
-                options = config.subsverbatim
+                options = core.g.config.subsverbatim
         return options
 
     @staticmethod
@@ -1297,15 +1297,15 @@ class Lex:
         options = Lex.canonical_subs(options)
         for o in options:
             if o == 'specialcharacters':
-                result = config.subs_specialchars(result)
+                result = core.g.config.subs_specialchars(result)
             elif o == 'attributes':
                 result = subs_attrs(result)
             elif o == 'quotes':
                 result = subs_quotes(result)
             elif o == 'specialwords':
-                result = config.subs_specialwords(result)
+                result = core.g.config.subs_specialwords(result)
             elif o in ('replacements','replacements2','replacements3'):
-                result = config.subs_replacements(result,o)
+                result = core.g.config.subs_replacements(result,o)
             elif o == 'macros':
                 result = macros.subs(result)
             elif o == 'callouts':
@@ -1407,18 +1407,18 @@ class Document:
         else:
             self.attributes['asciidoc-confdir'] = core.g.conf_dir
         self.attributes['user-dir'] = core.g.user_dir
-        if config.verbose:
+        if core.g.config.verbose:
             self.attributes['verbose'] = ''
         # Update with configuration file attributes.
         if attrs:
             self.attributes.update(attrs)
         # Update with command-line attributes.
-        self.attributes.update(config.cmd_attrs)
+        self.attributes.update(core.g.config.cmd_attrs)
         # Extract miscellaneous configuration section entries from attributes.
         if attrs:
-            config.load_miscellaneous(attrs)
-        config.load_miscellaneous(config.cmd_attrs)
-        self.attributes['newline'] = config.newline
+            core.g.config.load_miscellaneous(attrs)
+        core.g.config.load_miscellaneous(core.g.config.cmd_attrs)
+        self.attributes['newline'] = core.g.config.newline
         # File name related attributes can't be overridden.
         if self.infile is not None:
             if self.infile and os.path.exists(self.infile):
@@ -1445,8 +1445,8 @@ class Document:
                     self.attributes['docname'] = os.path.splitext(
                             os.path.basename(self.outfile))[0]
                 ext = os.path.splitext(self.outfile)[1][1:]
-            elif config.outfilesuffix:
-                ext = config.outfilesuffix[1:]
+            elif core.g.config.outfilesuffix:
+                ext = core.g.config.outfilesuffix[1:]
             else:
                 ext = ''
             if ext:
@@ -1461,7 +1461,7 @@ class Document:
             filename = 'lang-en.conf'   # Default language file.
         else:
             filename = 'lang-' + lang + '.conf'
-        if config.load_from_dirs(filename):
+        if core.g.config.load_from_dirs(filename):
             self.attributes['lang'] = lang  # Reinstate new lang attribute.
         else:
             if lang is None:
@@ -1535,7 +1535,7 @@ class Document:
         if has_header:
             Header.parse()
         # Command-line entries override header derived entries.
-        self.attributes.update(config.cmd_attrs)
+        self.attributes.update(core.g.config.cmd_attrs)
         # DEPRECATED: revision renamed to revnumber.
         self.set_deprecated_attribute('revision','revnumber')
         # DEPRECATED: date renamed to revdate.
@@ -1580,8 +1580,8 @@ class Document:
         if has_header:
             # Do postponed substitutions (backend confs have been loaded).
             self.attributes['doctitle'] = Title.dosubs(self.attributes['doctitle'])
-            if config.header_footer:
-                hdr = config.subs_section('header',{})
+            if core.g.config.header_footer:
+                hdr = core.g.config.subs_section('header',{})
                 writer.write(hdr,trace='header')
             if 'title' in self.attributes:
                 del self.attributes['title']
@@ -1590,16 +1590,16 @@ class Document:
                 # Translate 'preamble' (untitled elements between header
                 # and first section title).
                 if Lex.next() is not Title:
-                    stag,etag = config.section2tags('preamble')
+                    stag,etag = core.g.config.section2tags('preamble')
                     writer.write(stag,trace='preamble open')
                     Section.translate_body()
                     writer.write(etag,trace='preamble close')
-            elif self.doctype == 'manpage' and 'name' in config.sections:
-                writer.write(config.subs_section('name',{}), trace='name')
+            elif self.doctype == 'manpage' and 'name' in core.g.config.sections:
+                writer.write(core.g.config.subs_section('name',{}), trace='name')
         else:
             self.process_author_names()
-            if config.header_footer:
-                hdr = config.subs_section('header',{})
+            if core.g.config.header_footer:
+                hdr = core.g.config.subs_section('header',{})
                 writer.write(hdr,trace='header')
             if Lex.next() is not Title:
                 Section.translate_body()
@@ -1610,8 +1610,8 @@ class Document:
             Section.translate()
         Section.setlevel(0) # Write remaining unwritten section close tags.
         # Substitute document parameters and write document footer.
-        if config.header_footer:
-            ftr = config.subs_section('footer',{})
+        if core.g.config.header_footer:
+            ftr = core.g.config.subs_section('footer',{})
             writer.write(ftr,trace='footer')
     def parse_author(self,s):
         """ Return False if the author is malformed."""
@@ -1670,7 +1670,7 @@ class Document:
             initials = initials.upper()
         names = [firstname,middlename,lastname,author,initials]
         for i,v in enumerate(names):
-            v = config.subs_specialchars(v)
+            v = core.g.config.subs_specialchars(v)
             v = subs_attrs(v)
             names[i] = v
         firstname,middlename,lastname,author,initials = names
@@ -1814,11 +1814,11 @@ class AttributeEntry:
                     section[attr.name] = [attr.name2]
                 else:
                    section[attr.name] = ['%s=%s' % (attr.name2,attr.value)]
-                config.load_sections(section)
-                config.load_miscellaneous(config.conf_attrs)
+                core.g.config.load_sections(section)
+                core.g.config.load_miscellaneous(core.g.config.conf_attrs)
             else:
                 # Markup template section attribute.
-                config.sections[attr.name] = [attr.value]
+                core.g.config.sections[attr.name] = [attr.value]
         else:
             # Normal attribute.
             if attr.name[-1] == '!':
@@ -1828,7 +1828,7 @@ class AttributeEntry:
             # Strip white space and illegal name chars.
             attr.name = re.sub(r'(?u)[^\w\-_]', '', attr.name).lower()
             # Don't override most command-line attributes.
-            if attr.name in config.cmd_attrs \
+            if attr.name in core.g.config.cmd_attrs \
                     and attr.name not in ('trace','numbered'):
                 return
             # Update document attributes with attribute value.
@@ -1896,7 +1896,7 @@ class AttributeList:
         reo = re.compile(r"^'.*'$")
         for k,v in attrs.items():
             if reo.match(str(v)):
-                attrs[k] = Lex.subs_1(v[1:-1], config.subsnormal)
+                attrs[k] = Lex.subs_1(v[1:-1], core.g.config.subsnormal)
     @staticmethod
     def style():
         return AttributeList.attrs.get('style') or AttributeList.attrs.get('1')
@@ -1934,7 +1934,7 @@ class BlockTitle:
         reader.read()   # Discard title from reader.
         # Perform title substitutions.
         if not Title.subs:
-            Title.subs = config.subsnormal
+            Title.subs = core.g.config.subsnormal
         s = Lex.subs((BlockTitle.title,), Title.subs)
         s = writer.newline.join(s)
         if not s:
@@ -1979,7 +1979,7 @@ class Title:
         Perform title substitutions.
         """
         if not Title.subs:
-            Title.subs = config.subsnormal
+            Title.subs = core.g.config.subsnormal
         title = Lex.subs((title,), Title.subs)
         title = writer.newline.join(title)
         if not title:
@@ -2106,7 +2106,7 @@ class Title:
         elif 'template' in AttributeList.attrs:
             Title.sectname = AttributeList.attrs['template']
         else:
-            for pat,sect in config.specialsections.items():
+            for pat,sect in core.g.config.specialsections.items():
                 mo = re.match(pat,Title.attributes['title'])
                 if mo:
                     title = mo.groupdict().get('title')
@@ -2150,8 +2150,8 @@ class FloatingTitle(Title):
         Section.set_id()
         AttributeList.consume(Title.attributes)
         template = 'floatingtitle'
-        if template in config.sections:
-            stag,etag = config.section2tags(template,Title.attributes)
+        if template in core.g.config.sections:
+            stag,etag = core.g.config.section2tags(template,Title.attributes)
             writer.write(stag,trace='floating title')
         else:
             message.warning('missing template section: [%s]' % template)
@@ -2246,7 +2246,7 @@ class Section:
         else:
             Title.attributes['sectnum'] = ''
         AttributeList.consume(Title.attributes)
-        stag,etag = config.section2tags(Title.sectname,Title.attributes)
+        stag,etag = core.g.config.section2tags(Title.sectname,Title.attributes)
         Section.savetag(Title.level,etag)
         writer.write(stag,trace='section open: level %d: %s' %
                 (Title.level, Title.attributes['title']))
@@ -2449,7 +2449,7 @@ class AbstractBlock:
         all_styles_have_template = True
         for k,v in self.styles.items():
             t = v.get('template')
-            if t and not t in config.sections:
+            if t and not t in core.g.config.sections:
                 # Defer check if template name contains attributes.
                 if not re.search(r'{.+}',t):
                     message.warning('missing template section: [%s]' % t)
@@ -2459,7 +2459,7 @@ class AbstractBlock:
         # styles have templates.
         if self.is_conf_entry('template') and not 'skip' in self.options:
             if self.template:
-                if not self.template in config.sections:
+                if not self.template in core.g.config.sections:
                     # Defer check if template name contains attributes.
                     if not re.search(r'{.+}',self.template):
                         message.warning('missing template section: [%s]'
@@ -2485,7 +2485,7 @@ class AbstractBlock:
     def translate(self):
         """Translate block from document reader."""
         if not self.presubs:
-            self.presubs = config.subsnormal
+            self.presubs = core.g.config.subsnormal
         if reader.cursor:
             self.start = reader.cursor[:]
 
@@ -2681,11 +2681,11 @@ class Paragraph(AbstractBlock):
         body = Lex.subs(body,presubs)
         template = self.parameters.template
         template = subs_attrs(template,attrs)
-        stag = config.section2tags(template, self.attributes,skipend=True)[0]
+        stag = core.g.config.section2tags(template, self.attributes,skipend=True)[0]
         if self.parameters.filter:
             body = filter_lines(self.parameters.filter,body,self.attributes)
         body = Lex.subs(body,postsubs)
-        etag = config.section2tags(template, self.attributes,skipstart=True)[1]
+        etag = core.g.config.section2tags(template, self.attributes,skipstart=True)[1]
         # Write start tag, content, end tag.
         writer.write(dovetail_tags(stag,body,etag),trace='paragraph')
 
@@ -3028,12 +3028,12 @@ class DelimitedBlock(AbstractBlock):
             name = self.short_name()+' block'
             if 'sectionbody' in options:
                 # The body is treated like a section body.
-                stag,etag = config.section2tags(template,self.attributes)
+                stag,etag = core.g.config.section2tags(template,self.attributes)
                 writer.write(stag,trace=name+' open')
                 Section.translate_body(self)
                 writer.write(etag,trace=name+' close')
             else:
-                stag = config.section2tags(template,self.attributes,skipend=True)[0]
+                stag = core.g.config.section2tags(template,self.attributes,skipend=True)[0]
                 body = reader.read_until(self.delimiter,same_file=True)
                 presubs = self.parameters.presubs
                 postsubs = self.parameters.postsubs
@@ -3042,7 +3042,7 @@ class DelimitedBlock(AbstractBlock):
                     body = filter_lines(self.parameters.filter,body,self.attributes)
                 body = Lex.subs(body,postsubs)
                 # Write start tag, content, end tag.
-                etag = config.section2tags(template,self.attributes,skipstart=True)[1]
+                etag = core.g.config.section2tags(template,self.attributes,skipstart=True)[1]
                 writer.write(dovetail_tags(stag,body,etag),trace=name)
             trace(self.short_name()+' block close',etag)
         if reader.eof():
@@ -3166,9 +3166,9 @@ class Table(AbstractBlock):
             self.separator = literal_eval('"'+self.separator+'"')
         #TODO: Move to class Tables
         # Check global table parameters.
-        elif config.pagewidth is None:
+        elif core.g.config.pagewidth is None:
             self.error('missing [miscellaneous] entry: pagewidth')
-        elif config.pageunits is None:
+        elif core.g.config.pageunits is None:
             self.error('missing [miscellaneous] entry: pageunits')
     def validate_attributes(self):
         """Validate and parse table attributes."""
@@ -3176,7 +3176,7 @@ class Table(AbstractBlock):
         format = self.format
         tags = self.tags
         separator = self.separator
-        abswidth = float(config.pagewidth)
+        abswidth = float(core.g.config.pagewidth)
         pcwidth = 100.0
         for k,v in self.attributes.items():
             if k == 'format':
@@ -3195,7 +3195,7 @@ class Table(AbstractBlock):
                 if not re.match(r'^\d{1,3}%$',v) or int(v[:-1]) > 100:
                     self.error('illegal %s=%s' % (k,v))
                 else:
-                    abswidth = float(v[:-1])/100 * config.pagewidth
+                    abswidth = float(v[:-1])/100 * core.g.config.pagewidth
                     pcwidth = float(v[:-1])
         # Calculate separator if it has not been specified.
         if not separator:
@@ -3296,7 +3296,7 @@ class Table(AbstractBlock):
             else:
                 col.pcwidth = (float(col.width)/props)*100
             col.abswidth = self.abswidth * (col.pcwidth/100)
-            if config.pageunits in ('cm','mm','in','em'):
+            if core.g.config.pageunits in ('cm','mm','in','em'):
                 col.abswidth = '%.2f' % round(col.abswidth,2)
             else:
                 col.abswidth = '%d' % round(col.abswidth)
@@ -3551,8 +3551,8 @@ class Table(AbstractBlock):
         self.merge_attributes(attrs)
         self.validate_attributes()
         # Add global and calculated configuration parameters.
-        self.attributes['pagewidth'] = config.pagewidth
-        self.attributes['pageunits'] = config.pageunits
+        self.attributes['pagewidth'] = core.g.config.pagewidth
+        self.attributes['pageunits'] = core.g.config.pageunits
         self.attributes['tableabswidth'] = int(self.abswidth)
         self.attributes['tablepcwidth'] = int(self.pcwidth)
         # Read the entire table.
@@ -3603,7 +3603,7 @@ class Table(AbstractBlock):
         if self.rows:
             bodyrows = self.subs_rows(self.rows)
             self.attributes['bodyrows'] = '\x07bodyrows\x07'
-        table = subs_attrs(config.sections[self.parameters.template],
+        table = subs_attrs(core.g.config.sections[self.parameters.template],
                            self.attributes)
         table = writer.newline.join(table)
         # Before we finish replace the table head, foot and body place holders
@@ -3740,7 +3740,7 @@ class Macros:
         write('')
     def validate(self):
         # Check all named sections exist.
-        if config.verbose:
+        if core.g.config.verbose:
             for m in self.macros:
                 if m.name and m.prefix != '+':
                     m.section_name()
@@ -3811,7 +3811,7 @@ class Macro:
             suffix = '-blockmacro'
         else:
             suffix = '-inlinemacro'
-        if name+suffix in config.sections:
+        if name+suffix in core.g.config.sections:
             return name+suffix
         else:
             message.warning('missing macro section: [%s]' % (name+suffix))
@@ -3901,17 +3901,17 @@ class Macro:
             if core.g.document.backend == 'latex' and 'target' in d and d['target']:
                 if not '0' in d:
                     d['0'] = d['target']
-                d['target']= config.subs_specialchars_reverse(d['target'])
+                d['target']= core.g.config.subs_specialchars_reverse(d['target'])
             # BUG: We've already done attribute substitution on the macro which
             # means that any escaped attribute references are now unescaped and
-            # will be substituted by config.subs_section() below. As a partial
+            # will be substituted by core.g.config.subs_section() below. As a partial
             # fix have withheld {0} from substitution but this kludge doesn't
             # fix it for other attributes containing unescaped references.
             # Passthrough macros don't have this problem.
             a0 = d.get('0')
             if a0:
                 d['0'] = chr(0)  # Replace temporarily with unused character.
-            body = config.subs_section(section_name,d)
+            body = core.g.config.subs_section(section_name,d)
             if len(body) == 0:
                 result = ''
             elif len(body) == 1:
@@ -4157,14 +4157,14 @@ class Reader1:
                             message.warning('include file not found: %s' % fname)
                         return Reader1.read(self)   # Return next input line.
                     if mo.group('name') == 'include1':
-                        if not config.dumping:
-                            if fname not in config.include1:
+                        if not core.g.config.dumping:
+                            if fname not in core.g.config.include1:
                                 message.verbose('include1: ' + fname, linenos=False)
                                 # Store the include file in memory for later
                                 # retrieval by the {include1:} system attribute.
                                 f = open(fname, 'r', encoding=core.g.document.attributes['encoding'])
                                 try:
-                                    config.include1[fname] = [
+                                    core.g.config.include1[fname] = [
                                         s.rstrip() for s in f]
                                 finally:
                                     f.close()
@@ -4187,7 +4187,7 @@ class Reader1:
                     except ValueError:
                         raise EAsciiDoc('illegal include macro tabsize argument')
                 else:
-                    self.tabsize = config.tabsize
+                    self.tabsize = core.g.config.tabsize
                 if 'depth' in attrs:
                     try:
                         val = int(attrs['depth'])
@@ -4458,7 +4458,7 @@ class Writer:
         Substitutions specified in the 'subs' list are perform on the
         'content'."""
         if subs is None:
-            subs = config.subsnormal
+            subs = core.g.config.subsnormal
         stag,etag = subs_tag(tag,d)
         content = Lex.subs(content,subs)
         if 'trace' in kwargs:
@@ -4477,8 +4477,8 @@ def _subs_specialwords(mo):
     """Special word substitution function called by
     Config.subs_specialwords()."""
     word = mo.re.pattern                    # The special word.
-    template = config.specialwords[word]    # The corresponding markup template.
-    if not template in config.sections:
+    template = core.g.config.specialwords[word]    # The corresponding markup template.
+    if not template in core.g.config.sections:
         raise EAsciiDoc('missing special word template [%s]' % template)
     if mo.group()[0] == '\\':
         return mo.group()[1:]   # Return escaped word.
@@ -4488,7 +4488,7 @@ def _subs_specialwords(mo):
     # Delete groups that didn't participate in match.
     for k,v in list(args.items()):
         if v is None: del args[k]
-    lines = subs_attrs(config.sections[template],args)
+    lines = subs_attrs(core.g.config.sections[template],args)
     if len(lines) == 0:
         result = ''
     elif len(lines) == 1:
@@ -5259,11 +5259,11 @@ class Table_OLD(AbstractBlock):
         """Check table definition and set self.check_msg if invalid else set
         self.check_msg to blank string."""
         # Check global table parameters.
-        if config.textwidth is None:
+        if core.g.config.textwidth is None:
             self.check_msg = 'missing [miscellaneous] textwidth entry'
-        elif config.pagewidth is None:
+        elif core.g.config.pagewidth is None:
             self.check_msg = 'missing [miscellaneous] pagewidth entry'
-        elif config.pageunits is None:
+        elif core.g.config.pageunits is None:
             self.check_msg = 'missing [miscellaneous] pageunits entry'
         elif self.headrow is None:
             self.check_msg = 'missing headrow entry'
@@ -5361,7 +5361,7 @@ class Table_OLD(AbstractBlock):
             else:
                     # Size proportional to page width.
                 colfraction = width/totalwidth
-            c.colwidth = colfraction * config.pagewidth # To page units.
+            c.colwidth = colfraction * core.g.config.pagewidth # To page units.
             if self.tablewidth is not None:
                 c.colwidth = c.colwidth * self.tablewidth   # Scale factor.
                 if self.tablewidth > 1:
@@ -5509,8 +5509,8 @@ class Table_OLD(AbstractBlock):
         attrs = {}
         BlockTitle.consume(attrs)
         # Add relevant globals to table substitutions.
-        attrs['pagewidth'] = str(config.pagewidth)
-        attrs['pageunits'] = config.pageunits
+        attrs['pagewidth'] = str(core.g.config.pagewidth)
+        attrs['pageunits'] = core.g.config.pageunits
         # Mix in document attribute list.
         AttributeList.consume(attrs)
         # Validate overridable attributes.
@@ -5573,7 +5573,7 @@ class Table_OLD(AbstractBlock):
         bodyrows = self.parse_rows(bodyrows, self.bodyrow, self.bodydata)
         bodyrows = writer.newline.join(bodyrows)
         self.attributes['bodyrows'] = '\x07bodyrows\x07'
-        table = subs_attrs(config.sections[self.template],self.attributes)
+        table = subs_attrs(core.g.config.sections[self.template],self.attributes)
         table = writer.newline.join(table)
         # Before we finish replace the table head, foot and body place holders
         # with the real data.
@@ -5644,7 +5644,7 @@ class Tables_OLD(AbstractBlocks):
         # Check table definitions are valid.
         for b in self.blocks:
             b.validate()
-            if config.verbose:
+            if core.g.config.verbose:
                 if b.check_msg:
                     message.warning('[%s] table definition: %s' % (b.defname,b.check_msg))
 
@@ -5824,7 +5824,7 @@ class Plugin:
         """
         List all plugin directories (global and local).
         """
-        for d in [os.path.join(d, Plugin.type+'s') for d in config.get_load_dirs()]:
+        for d in [os.path.join(d, Plugin.type+'s') for d in core.g.config.get_load_dirs()]:
             if os.path.isdir(d):
                 for f in os.walk(d).next()[1]:
                     message.stdout(os.path.join(d,f))
@@ -5869,7 +5869,7 @@ core.g.help_file = HELP_FILE
 # Globals
 # -------
 core.g.document = Document()    # The document being processed.
-config = Config()           # Configuration file reader.
+core.g.config = Config()        # Configuration file reader.
 reader = Reader()           # Input stream line reader.
 writer = Writer()           # Output stream line writer.
 message = Message()         # Message functions.
@@ -5906,34 +5906,34 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         if files:
             for f in files:
                 if os.path.isfile(f):
-                    config.load_file(f, include=include, exclude=exclude)
+                    core.g.config.load_file(f, include=include, exclude=exclude)
                 else:
                     raise EAsciiDoc('missing configuration file: %s' % f)
 
     try:
         core.g.document.attributes['python'] = sys.executable
-        for f in config.filters:
-            if not config.find_config_dir('filters', f):
+        for f in core.g.config.filters:
+            if not core.g.config.find_config_dir('filters', f):
                 raise EAsciiDoc('missing filter: %s' % f)
         if doctype not in (None, 'article', 'manpage', 'book'):
             raise EAsciiDoc('illegal document type')
         # Set processing options.
         for o in options:
-            if o == '-c': config.dumping = True
-            if o == '-s': config.header_footer = False
-            if o == '-v': config.verbose = True
+            if o == '-c': core.g.config.dumping = True
+            if o == '-s': core.g.config.header_footer = False
+            if o == '-v': core.g.config.verbose = True
         core.g.document.update_attributes()
         if '-e' not in options:
             # Load asciidoc.conf files in two passes: the first for attributes
             # the second for everything. This is so that locally set attributes
             # available are in the global asciidoc.conf
-            if not config.load_from_dirs('asciidoc.conf',include=['attributes']):
+            if not core.g.config.load_from_dirs('asciidoc.conf',include=['attributes']):
                 raise EAsciiDoc('configuration file asciidoc.conf missing')
             load_conffiles(include=['attributes'])
-            config.load_from_dirs('asciidoc.conf')
+            core.g.config.load_from_dirs('asciidoc.conf')
             if infile != '<stdin>':
                 indir = os.path.dirname(infile)
-                config.load_file('asciidoc.conf', indir,
+                core.g.config.load_file('asciidoc.conf', indir,
                                 include=['attributes','titles','specialchars'])
         else:
             load_conffiles(include=['attributes','titles','specialchars'])
@@ -5945,16 +5945,16 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         core.g.document.infile = infile
         AttributeList.initialize()
         # Open input file and parse document header.
-        reader.tabsize = config.tabsize
+        reader.tabsize = core.g.config.tabsize
         reader.open(infile)
         has_header = core.g.document.parse_header(doctype,backend)
         # doctype is now finalized.
         core.g.document.attributes['doctype-'+core.g.document.doctype] = ''
-        config.set_theme_attributes()
+        core.g.config.set_theme_attributes()
         # Load backend configuration files.
         if '-e' not in options:
             f = core.g.document.backend + '.conf'
-            conffile = config.load_backend()
+            conffile = core.g.config.load_backend()
             if not conffile:
                 raise EAsciiDoc('missing backend conf file: %s' % f)
             core.g.document.attributes['backend-confdir'] = os.path.dirname(conffile)
@@ -5964,20 +5964,20 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         doc_conffiles = []
         if '-e' not in options:
             # Load filters and language file.
-            config.load_filters()
+            core.g.config.load_filters()
             core.g.document.load_lang()
             if infile != '<stdin>':
                 # Load local conf files (files in the source file directory).
-                config.load_file('asciidoc.conf', indir)
-                config.load_backend([indir])
-                config.load_filters([indir])
+                core.g.config.load_file('asciidoc.conf', indir)
+                core.g.config.load_backend([indir])
+                core.g.config.load_filters([indir])
                 # Load document specific configuration files.
                 f = os.path.splitext(infile)[0]
                 doc_conffiles = [
                         f for f in (f+'.conf', f+'-'+core.g.document.backend+'.conf')
                         if os.path.isfile(f) ]
                 for f in doc_conffiles:
-                    config.load_file(f)
+                    core.g.config.load_file(f)
         load_conffiles()
         # Build asciidoc-args attribute.
         args = ''
@@ -5987,7 +5987,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         # Add command-line and header attributes.
         attrs = {}
         attrs.update(AttributeEntry.attributes)
-        attrs.update(config.cmd_attrs)
+        attrs.update(core.g.config.cmd_attrs)
         if 'title' in attrs:    # Don't pass the header title.
             del attrs['title']
         for k,v in attrs.items():
@@ -5999,9 +5999,9 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         # Build outfile name.
         if outfile is None:
             outfile = os.path.splitext(infile)[0] + '.' + core.g.document.backend
-            if config.outfilesuffix:
+            if core.g.config.outfilesuffix:
                 # Change file extension.
-                outfile = os.path.splitext(outfile)[0] + config.outfilesuffix
+                outfile = os.path.splitext(outfile)[0] + core.g.config.outfilesuffix
         core.g.document.outfile = outfile
         # Document header attributes override conf file attributes.
         core.g.document.attributes.update(AttributeEntry.attributes)
@@ -6011,18 +6011,18 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             core.g.document.attributes['iconsdir'] = os.path.join(
                      core.g.document.attributes['asciidoc-confdir'], 'images/icons')
         # Configuration is fully loaded.
-        config.expand_all_templates()
+        core.g.config.expand_all_templates()
         # Check configuration for consistency.
-        config.validate()
+        core.g.config.validate()
         # Initialize top level block name.
         if core.g.document.attributes.get('blockname'):
             AbstractBlock.blocknames.append(core.g.document.attributes['blockname'])
         paragraphs.initialize()
         lists.initialize()
-        if config.dumping:
-            config.dump()
+        if core.g.config.dumping:
+            core.g.config.dump()
         else:
-            writer.newline = config.newline
+            writer.newline = core.g.config.newline
             try:
                 writer.open(outfile)
                 try:
@@ -6063,29 +6063,29 @@ def show_help(topic, f=None):
     if f is None:
         f = sys.stdout
     # Select help file.
-    lang = config.cmd_attrs.get('lang')
+    lang = core.g.config.cmd_attrs.get('lang')
     if lang and lang != 'en':
         help_file = 'help-' + lang + '.conf'
     else:
         help_file = core.g.help_file
     # Print [topic] section from help file.
-    config.load_from_dirs(help_file)
-    if len(config.sections) == 0:
+    core.g.config.load_from_dirs(help_file)
+    if len(core.g.config.sections) == 0:
         # Default to English if specified language help files not found.
         help_file = core.g.help_file
-        config.load_from_dirs(help_file)
-    if len(config.sections) == 0:
+        core.g.config.load_from_dirs(help_file)
+    if len(core.g.config.sections) == 0:
         message.stderr('no help topics found')
         sys.exit(1)
     n = 0
-    for k in config.sections:
+    for k in core.g.config.sections:
         if re.match(re.escape(topic), k):
             n += 1
-            lines = config.sections[k]
+            lines = core.g.config.sections[k]
     if n == 0:
         if topic != 'topics':
             message.stderr('help topic not found: [%s] in %s' % (topic, help_file))
-        message.stderr('available help topics: %s' % ', '.join(config.sections.keys()))
+        message.stderr('available help topics: %s' % ', '.join(core.g.config.sections.keys()))
         sys.exit(1)
     elif n > 1:
         message.stderr('ambiguous help topic: %s' % topic)
@@ -6119,7 +6119,7 @@ def execute(cmd, opts, args):
 
        >>>
     """
-    config.init(cmd)
+    core.g.config.init(cmd)
     if len(args) > 1:
         usage('Too many arguments')
         sys.exit(1)
@@ -6151,7 +6151,7 @@ def execute(cmd, opts, args):
         if o in ('-f','--conf-file'):
             confiles.append(v)
         if o == '--filter':
-            config.filters.append(v)
+            core.g.config.filters.append(v)
         if o in ('-n','--section-numbers'):
             o = '-a'
             v = 'numbered'
@@ -6168,7 +6168,7 @@ def execute(cmd, opts, args):
             if v and v[-1] == '@':
                 core.g.document.attributes[k] = v[:-1]
             else:
-                config.cmd_attrs[k] = v
+                core.g.config.cmd_attrs[k] = v
         if o in ('-o','--out-file'):
             outfile = v
         if o in ('-s','--no-header-footer'):
@@ -6259,8 +6259,8 @@ if __name__ == '__main__':
         if cmd not in Plugin.CMDS:
             die('illegal --%s command: %s' % (plugin, cmd))
         Plugin.type = plugin
-        config.init(sys.argv[0])
-        config.verbose = bool(set(['-v','--verbose']) & set(opt_names))
+        core.g.config.init(sys.argv[0])
+        core.g.config.verbose = bool(set(['-v','--verbose']) & set(opt_names))
         getattr(Plugin,cmd)(args)
     else:
         # Execute asciidoc.
