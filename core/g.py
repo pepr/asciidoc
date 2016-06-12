@@ -13,19 +13,24 @@ def init_globals(CONF_DIR, HELP_FILE, prog):
     global conf_dir, help_file
     conf_dir = CONF_DIR
     help_file = HELP_FILE
-    
+
     global progname
     progname = prog             # asciidoc script basename without extension
 
     # Globals
     # -------
     ##from .document import Document
-    ##global document #, config, reader, writer, message
+    ##global document
     ##document = Document()       # The document being processed.
+
+    ##global document #, config, reader, writer, message
     ##config = Config()           # Configuration file reader.
     ##reader = Reader()           # Input stream line reader.
     ##writer = Writer()           # Output stream line writer.
-    ##message = Message()         # Message functions.
+
+    from .message import Message
+    global message
+    message = Message()         # Message functions.
     ##
     ##global paragraphs, lists, blocks, tables_OLD, tables, macros, calloutmap, trace
     ##paragraphs = Paragraphs()   # Paragraph definitions.
