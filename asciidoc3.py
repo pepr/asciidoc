@@ -5856,15 +5856,11 @@ class Plugin:
 # ---------
 import core.g
 
-core.g.app_file = None      # This file's full path.
-core.g.app_dir = None       # This file's directory.
-core.g.user_dir = None      # ~/.asciidoc3
 # Global configuration files directory (set by Makefile build target).
 CONF_DIR = '/etc/asciidoc3'
 HELP_FILE = 'help.conf'     # Default (English) help file.
 
-core.g.conf_dir = CONF_DIR
-core.g.help_file = HELP_FILE
+core.g.init_globals(CONF_DIR, HELP_FILE)
 
 # Globals
 # -------
@@ -5881,6 +5877,8 @@ core.g.tables = Tables()            # Table definitions.
 core.g.macros = Macros()            # Macro definitions.
 core.g.calloutmap = CalloutMap()    # Coordinates callouts and callout list.
 core.g.trace = Trace()              # Implements trace attribute processing.
+
+
 
 ### Used by asciidocapi.py ###
 # List of message strings written to stderr.
