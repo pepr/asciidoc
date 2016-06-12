@@ -106,7 +106,7 @@ class Trace:
         Print trace message if tracing is on and the trace 'name' matches the
         document 'trace' attribute (treated as a regexp).
         'before' is the source text before substitution; 'after' text is the
-        source text after substitutuion.
+        source text after substitution.
         The 'before' and 'after' messages are only printed if they differ.
         """
         name_re = document.attributes.get('trace')
@@ -204,7 +204,7 @@ def localapp():
     Return True if we are not executing the system wide version
     i.e. the configuration is in the executable's directory.
     """
-    return os.path.isfile(os.path.join(APP_DIR, 'asciidoc.conf'))
+    return os.path.isfile(os.path.join(core.g.app_dir, 'asciidoc.conf'))
 
 def file_in(fname, directory):
     """Return True if file fname resides inside directory."""
@@ -233,8 +233,8 @@ def is_safe_file(fname, directory=None):
     return (
         not safe()
         or file_in(fname, directory)
-        or file_in(fname, APP_DIR)
-        or file_in(fname, CONF_DIR)
+        or file_in(fname, core.g.app_dir)
+        or file_in(fname, core.g.conf_dir)
     )
 
 def safe_filename(fname, parentdir):
@@ -754,13 +754,13 @@ def filter_lines(filter_cmd, lines, attrs={}):
         if d:
             found = findfilter(filtername, d, cmd)
         if not found:
-            if USER_DIR:
-                found = findfilter(filtername, USER_DIR, cmd)
+            if core.g.user_dir:
+                found = findfilter(filtername, core.g.user_dir, cmd)
             if not found:
                 if localapp():
-                    found = findfilter(filtername, APP_DIR, cmd)
+                    found = findfilter(filtername, core.g.app_dir, cmd)
                 else:
-                    found = findfilter(filtername, CONF_DIR, cmd)
+                    found = findfilter(filtername, core.g.conf_dir, cmd)
     else:
         if os.path.isfile(cmd):
             found = cmd
@@ -1400,13 +1400,13 @@ class Document:
         self.attributes['localtime'] = time_str(t)
         self.attributes['localdate'] = date_str(t)
         self.attributes['asciidoc-version'] = VERSION
-        self.attributes['asciidoc-file'] = APP_FILE
-        self.attributes['asciidoc-dir'] = APP_DIR
+        self.attributes['asciidoc-file'] = core.g.app_file
+        self.attributes['asciidoc-dir'] = core.g.app_dir
         if localapp():
-            self.attributes['asciidoc-confdir'] = APP_DIR
+            self.attributes['asciidoc-confdir'] = core.g.app_dir
         else:
-            self.attributes['asciidoc-confdir'] = CONF_DIR
-        self.attributes['user-dir'] = USER_DIR
+            self.attributes['asciidoc-confdir'] = core.g.conf_dir
+        self.attributes['user-dir'] = core.g.user_dir
         if config.verbose:
             self.attributes['verbose'] = ''
         # Update with configuration file attributes.
@@ -4553,16 +4553,13 @@ class Config:
         if not os.path.exists(cmd):
             message.stderr('FAILED: Missing asciidoc command: %s' % cmd)
             sys.exit(1)
-        global APP_FILE
-        APP_FILE = os.path.realpath(cmd)
-        global APP_DIR
-        APP_DIR = os.path.dirname(APP_FILE)
-        global USER_DIR
-        USER_DIR = userdir()
-        if USER_DIR is not None:
-            USER_DIR = os.path.join(USER_DIR,'.asciidoc3')
-            if not os.path.isdir(USER_DIR):
-                USER_DIR = None
+        core.g.app_file = os.path.realpath(cmd)
+        core.g.app_dir = os.path.dirname(core.g.app_file)
+        core.g.user_dir = userdir()
+        if core.g.user_dir is not None:
+            core.g.user_dir = os.path.join(core.g.user_dir,'.asciidoc3')
+            if not os.path.isdir(core.g.user_dir):
+                core.g.user_dir = None
 
     def load_file(self, fname, dir=None, include=[], exclude=[]):
         """
@@ -4697,13 +4694,13 @@ class Config:
         result = []
         if localapp():
             # Load from folders in asciidoc executable directory.
-            result.append(APP_DIR)
+            result.append(core.g.app_dir)
         else:
             # Load from global configuration directory.
-            result.append(CONF_DIR)
+            result.append(core.g.conf_dir)
         # Load configuration files from ~/.asciidoc3 if it exists.
-        if USER_DIR is not None:
-            result.append(USER_DIR)
+        if core.g.user_dir is not None:
+            result.append(core.g.user_dir)
         return result
 
     def find_in_dirs(self, filename, dirs=None):
@@ -5857,12 +5854,17 @@ class Plugin:
 #---------------------------------------------------------------------------
 # Constants
 # ---------
-APP_FILE = None             # This file's full path.
-APP_DIR = None              # This file's directory.
-USER_DIR = None             # ~/.asciidoc3
+import core.g
+
+core.g.app_file = None             # This file's full path.
+core.g.app_dir = None              # This file's directory.
+core.g.user_dir = None             # ~/.asciidoc3
 # Global configuration files directory (set by Makefile build target).
 CONF_DIR = '/etc/asciidoc3'
 HELP_FILE = 'help.conf'     # Default (English) help file.
+
+core.g.conf_dir = CONF_DIR
+core.g.help_file = HELP_FILE
 
 # Globals
 # -------
@@ -6065,12 +6067,12 @@ def show_help(topic, f=None):
     if lang and lang != 'en':
         help_file = 'help-' + lang + '.conf'
     else:
-        help_file = HELP_FILE
+        help_file = core.g.help_file
     # Print [topic] section from help file.
     config.load_from_dirs(help_file)
     if len(config.sections) == 0:
         # Default to English if specified language help files not found.
-        help_file = HELP_FILE
+        help_file = core.g.help_file
         config.load_from_dirs(help_file)
     if len(config.sections) == 0:
         message.stderr('no help topics found')
