@@ -1386,6 +1386,8 @@ core.g.config = Config()            # Configuration file reader.
 core.g.reader = Reader()            # Input stream line reader.
 core.g.writer = Writer()            # Output stream line writer.
 
+core.g.init_globals_phase2()
+
 ##core.g.paragraphs = Paragraphs()    # Paragraph definitions.
 ##core.g.lists = Lists()              # List definitions.
 ##core.g.blocks = DelimitedBlocks()   # DelimitedBlock definitions.

@@ -31,6 +31,9 @@ def init_globals(CONF_DIR, HELP_FILE, prog, asciidoc_ver):
     ##reader = Reader()           # Input stream line reader.
     ##writer = Writer()           # Output stream line writer.
 
+
+def init_globals_phase2():
+
     from .message import Message
     global message
     message = Message()         # Message functions.
