@@ -1248,7 +1248,7 @@ class Lex:
             result = AttributeEntry
         elif AttributeList.isnext():
             result = AttributeList
-        elif BlockTitle.isnext() and not tables_OLD.isnext():
+        elif BlockTitle.isnext() and not core.g.tables_OLD.isnext():
             result = BlockTitle
         elif Title.isnext():
             if AttributeList.style() == 'float':
@@ -1261,8 +1261,8 @@ class Lex:
             result = core.g.lists.current
         elif core.g.blocks.isnext():
             result = core.g.blocks.current
-        elif tables_OLD.isnext():
-            result = tables_OLD.current
+        elif core.g.tables_OLD.isnext():
+            result = core.g.tables_OLD.current
         elif tables.isnext():
             result = tables.current
         else:
@@ -2702,7 +2702,7 @@ class Paragraphs(AbstractBlocks):
                 re.compile(AttributeList.pattern),
                 re.compile(core.g.blocks.delimiters),
                 re.compile(tables.delimiters),
-                re.compile(tables_OLD.delimiters),
+                re.compile(core.g.tables_OLD.delimiters),
             ]
     def load(self,sections):
         AbstractBlocks.load(self,sections)
@@ -2961,7 +2961,7 @@ class Lists(AbstractBlocks):
                 re.compile(core.g.lists.delimiters),
                 re.compile(core.g.blocks.delimiters),
                 re.compile(tables.delimiters),
-                re.compile(tables_OLD.delimiters),
+                re.compile(core.g.tables_OLD.delimiters),
             ]
     def load(self,sections):
         AbstractBlocks.load(self,sections)
@@ -4683,7 +4683,7 @@ class Config:
         core.g.paragraphs.load(sections)
         core.g.lists.load(sections)
         core.g.blocks.load(sections)
-        tables_OLD.load(sections)
+        core.g.tables_OLD.load(sections)
         tables.load(sections)
         macros.load(sections.get('macros',()))
 
@@ -4874,7 +4874,7 @@ class Config:
         core.g.paragraphs.validate()
         core.g.lists.validate()
         core.g.blocks.validate()
-        tables_OLD.validate()
+        core.g.tables_OLD.validate()
         tables.validate()
         macros.validate()
         core.g.message.linenos = None
@@ -4928,7 +4928,7 @@ class Config:
         core.g.paragraphs.dump()
         core.g.lists.dump()
         core.g.blocks.dump()
-        tables_OLD.dump()
+        core.g.tables_OLD.dump()
         tables.dump()
         macros.dump()
         # Dump remaining sections.
@@ -5876,7 +5876,7 @@ core.g.message = Message()          # Message functions.
 core.g.paragraphs = Paragraphs()    # Paragraph definitions.
 core.g.lists = Lists()              # List definitions.
 core.g.blocks = DelimitedBlocks()   # DelimitedBlock definitions.
-tables_OLD = Tables_OLD()   # Table_OLD definitions.
+core.g.tables_OLD = Tables_OLD()    # Table_OLD definitions.
 tables = Tables()           # Table definitions.
 macros = Macros()           # Macro definitions.
 calloutmap = CalloutMap()   # Coordinates callouts and callout list.
