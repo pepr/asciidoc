@@ -92,7 +92,7 @@ class InsensitiveDict(dict):
 class Trace:
     """
     Used in conjunction with the 'trace' attribute to generate diagnostic
-    output. There is a single global instance of this class named trace.
+    output. There is a single global instance of this class named core.g.trace.
     """
     SUBS_NAMES = ('specialcharacters', 'quotes', 'specialwords',
                   'replacements', 'attributes', 'macros', 'callouts',
@@ -1143,7 +1143,7 @@ def subs_attrs(lines, dictionary=None):
         # Drop line if it contains  unsubstituted {name} references.
         skipped = re.search(r'(?su)\{[^\\\W][-\w]*?\}(?!\\)', line)
         if skipped:
-            trace('dropped line', line)
+            core.g.trace('dropped line', line)
             continue;
         # Expand system attributes (eval has precedence).
         reos = [
@@ -1312,7 +1312,7 @@ class Lex:
                 result = core.g.macros.subs(result,callouts=True)
             else:
                 raise EAsciiDoc('illegal substitution option: %s' % o)
-            trace(o, s, result)
+            core.g.trace(o, s, result)
             if not result:
                 break
         return result
@@ -2496,7 +2496,7 @@ class AbstractBlock:
         '''
         if blockname is None:
             blockname = self.attributes.get('style', self.short_name()).lower()
-        trace('push blockname', blockname)
+        core.g.trace('push blockname', blockname)
         self.blocknames.append(blockname)
         core.g.document.attributes['blockname'] = blockname
 
@@ -2507,7 +2507,7 @@ class AbstractBlock:
         '''
         assert len(self.blocknames) > 0
         blockname = self.blocknames.pop()
-        trace('pop blockname', blockname)
+        core.g.trace('pop blockname', blockname)
         if len(self.blocknames) == 0:
             core.g.document.attributes['blockname'] = None
         else:
@@ -3044,7 +3044,7 @@ class DelimitedBlock(AbstractBlock):
                 # Write start tag, content, end tag.
                 etag = core.g.config.section2tags(template,self.attributes,skipstart=True)[1]
                 core.g.writer.write(dovetail_tags(stag,body,etag),trace=name)
-            trace(self.short_name()+' block close',etag)
+            core.g.trace(self.short_name()+' block close',etag)
         if core.g.reader.eof():
             self.error('missing closing delimiter',self.start)
         else:
@@ -3942,7 +3942,7 @@ class Macro:
             if self.has_passthrough():
                 s = core.g.macros.restore_passthroughs(s)
             if s:
-                trace('macro block',before,s)
+                core.g.trace('macro block',before,s)
                 core.g.writer.write(s)
 
     def subs_passthroughs(self, text, passthroughs):
@@ -4441,7 +4441,7 @@ class Writer:
         blank line. If argument is None nothing is written. '\n' is
         appended to each line."""
         if 'trace' in kwargs and len(args) > 0:
-            trace(kwargs['trace'],args[0])
+            core.g.trace(kwargs['trace'],args[0])
         if len(args) == 0:
             self.write_line()
             self.lines_out = self.lines_out + 1
@@ -4462,7 +4462,7 @@ class Writer:
         stag,etag = subs_tag(tag,d)
         content = Lex.subs(content,subs)
         if 'trace' in kwargs:
-            trace(kwargs['trace'], [stag] + content + [etag])
+            core.g.trace(kwargs['trace'], [stag] + content + [etag])
         if stag:
             self.write(stag)
         if content:
@@ -5880,7 +5880,7 @@ core.g.tables_OLD = Tables_OLD()    # Table_OLD definitions.
 core.g.tables = Tables()            # Table definitions.
 core.g.macros = Macros()            # Macro definitions.
 core.g.calloutmap = CalloutMap()    # Coordinates callouts and callout list.
-trace = Trace()             # Implements trace attribute processing.
+core.g.trace = Trace()              # Implements trace attribute processing.
 
 ### Used by asciidocapi.py ###
 # List of message strings written to stderr.
