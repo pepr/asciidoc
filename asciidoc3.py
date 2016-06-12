@@ -2776,7 +2776,7 @@ class List(AbstractBlock):
         core.g.writer.write(entrytag[1],trace='list entry close')
     def translate_item(self):
         if self.type == 'callout':
-            self.attributes['coids'] = calloutmap.calloutids(self.ordinal)
+            self.attributes['coids'] = core.g.calloutmap.calloutids(self.ordinal)
         itemtag = subs_tag(self.tag.item, self.attributes)
         core.g.writer.write(itemtag[0],trace='list item open')
         # Write ItemText.
@@ -2936,8 +2936,8 @@ class List(AbstractBlock):
         if etag:
             core.g.writer.write(etag,trace='list close')
         if self.type == 'callout':
-            calloutmap.validate(self.ordinal)
-            calloutmap.listclose()
+            core.g.calloutmap.validate(self.ordinal)
+            core.g.calloutmap.listclose()
         core.g.lists.open.pop()
         if len(core.g.lists.open):
             core.g.document.attributes['listindex'] = str(core.g.lists.open[-1].ordinal)
@@ -3893,7 +3893,7 @@ class Macro:
                         AttributeList.subs(d)
             if name == 'callout':
                 listindex =int(d['index'])
-                d['coid'] = calloutmap.add(listindex)
+                d['coid'] = core.g.calloutmap.add(listindex)
             # The alt attribute is the first image macro positional attribute.
             if name == 'image' and '1' in d:
                 d['alt'] = d['1']
@@ -5879,7 +5879,7 @@ core.g.blocks = DelimitedBlocks()   # DelimitedBlock definitions.
 core.g.tables_OLD = Tables_OLD()    # Table_OLD definitions.
 core.g.tables = Tables()            # Table definitions.
 core.g.macros = Macros()            # Macro definitions.
-calloutmap = CalloutMap()   # Coordinates callouts and callout list.
+core.g.calloutmap = CalloutMap()    # Coordinates callouts and callout list.
 trace = Trace()             # Implements trace attribute processing.
 
 ### Used by asciidocapi.py ###
