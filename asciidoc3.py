@@ -166,9 +166,9 @@ class Message:
 
     def format(self, msg, prefix='', linenos=True, cursor=None, offset=0):
         """Return formatted message string."""
-        if self.linenos is not False and ((linenos or self.linenos) and reader.cursor):
+        if self.linenos is not False and ((linenos or self.linenos) and core.g.reader.cursor):
             if cursor is None:
-                cursor = reader.cursor
+                cursor = core.g.reader.cursor
             prefix += '%s: line %d: ' % (os.path.basename(cursor[0]),cursor[1]+offset)
         return prefix + msg
 
@@ -945,7 +945,7 @@ def system(name, args, is_macro=False, attrs=None):
             if result:
                 result = subs_attrs(result)
                 result = separator.join(result)
-                result = result.expandtabs(reader.tabsize)
+                result = result.expandtabs(core.g.reader.tabsize)
             else:
                 result = ''
     elif name == 'include1':
@@ -1238,11 +1238,11 @@ class Lex:
         The reader is assumed to be at the first line following a previous element,
         end of file or line one.  Exits with the reader pointing to the first
         line of the next element or EOF (leading blank lines are skipped)."""
-        reader.skip_blank_lines()
-        if reader.eof(): return None
+        core.g.reader.skip_blank_lines()
+        if core.g.reader.eof(): return None
         # Optimization: If we've already checked for an element at this
         # position return the element.
-        if Lex.prev_element and Lex.prev_cursor == reader.cursor:
+        if Lex.prev_element and Lex.prev_cursor == core.g.reader.cursor:
             return Lex.prev_element
         if AttributeEntry.isnext():
             result = AttributeEntry
@@ -1270,7 +1270,7 @@ class Lex:
                 raise EAsciiDoc('paragraph expected')
             result = paragraphs.current
         # Optimization: Cache answer.
-        Lex.prev_cursor = reader.cursor
+        Lex.prev_cursor = core.g.reader.cursor
         Lex.prev_element = result
         return result
 
@@ -1489,12 +1489,12 @@ class Document:
         finished = False
         while not finished:
             finished = True
-            if noblanks and not reader.read_next(): return result
+            if noblanks and not core.g.reader.read_next(): return result
             if blocks.isnext() and 'skip' in blocks.current.options:
                 result = True
                 finished = False
                 blocks.current.translate()
-            if noblanks and not reader.read_next(): return result
+            if noblanks and not core.g.reader.read_next(): return result
             if macros.isnext() and macros.current.name == 'comment':
                 result = True
                 finished = False
@@ -1565,7 +1565,7 @@ class Document:
                     message.error('name section title must be at level 1')
                 if not isinstance(Lex.next(),Paragraph):
                     message.error('malformed name section body')
-                lines = reader.read_until(r'^$')
+                lines = core.g.reader.read_until(r'^$')
                 s = ' '.join(lines)
                 mo = re.match(r'^(?P<manname>.*?)\s+-\s+(?P<manpurpose>.*)$',s)
                 if not mo:
@@ -1604,7 +1604,7 @@ class Document:
             if Lex.next() is not Title:
                 Section.translate_body()
         # Process remaining sections.
-        while not reader.eof():
+        while not core.g.reader.eof():
             if Lex.next() is not Title:
                 raise EAsciiDoc('section title expected')
             Section.translate()
@@ -1702,20 +1702,20 @@ class Header:
         Title.translate(skipsubs=True)
         attrs['doctitle'] = Title.attributes['title']
         core.g.document.consume_attributes_and_comments(noblanks=True)
-        s = reader.read_next()
+        s = core.g.reader.read_next()
         mo = None
         if s:
             # Process first header line after the title that is not a comment
             # or an attribute entry.
-            s = reader.read()
+            s = core.g.reader.read()
             mo = re.match(Header.RCS_ID_RE,s)
             if not mo:
                 core.g.document.parse_author(s)
                 core.g.document.consume_attributes_and_comments(noblanks=True)
-                if reader.read_next():
+                if core.g.reader.read_next():
                     # Process second header line after the title that is not a
                     # comment or an attribute entry.
-                    s = reader.read()
+                    s = core.g.reader.read()
                     s = subs_attrs(s)
                     if s:
                         mo = re.match(Header.RCS_ID_RE,s)
@@ -1736,10 +1736,10 @@ class Header:
             if revremark is not None:
                 revremark = [revremark]
                 # Revision remarks can continue on following lines.
-                while reader.read_next():
+                while core.g.reader.read_next():
                     if core.g.document.consume_attributes_and_comments(noblanks=True):
                         break
-                    revremark.append(reader.read())
+                    revremark.append(core.g.reader.read())
                 revremark = Lex.subs(revremark,['normal'])
                 revremark = '\n'.join(revremark).strip()
                 attrs['revremark'] = revremark
@@ -1785,7 +1785,7 @@ class AttributeEntry:
             if not pat:
                 message.error("[attributes] missing 'attributeentry-pattern' entry")
             AttributeEntry.pattern = pat
-        line = reader.read_next()
+        line = core.g.reader.read_next()
         if line:
             # Attribute entry formatted like :<name>[.<name2>]:[ <value>]
             mo = re.match(AttributeEntry.pattern,line)
@@ -1800,10 +1800,10 @@ class AttributeEntry:
     def translate():
         assert Lex.next() is AttributeEntry
         attr = AttributeEntry    # Alias for brevity.
-        reader.read()            # Discard attribute entry from reader.
+        core.g.reader.read()            # Discard attribute entry from core.g.reader.
         while attr.value.endswith(' +'):
-            if not reader.read_next(): break
-            attr.value = attr.value[:-1] + reader.read().strip()
+            if not core.g.reader.read_next(): break
+            attr.value = attr.value[:-1] + core.g.reader.read().strip()
         if attr.name2 is not None:
             # Configuration file attribute.
             if attr.name2 != '':
@@ -1867,7 +1867,7 @@ class AttributeList:
     @staticmethod
     def isnext():
         result = False  # Assume not next.
-        line = reader.read_next()
+        line = core.g.reader.read_next()
         if line:
             mo = re.match(AttributeList.pattern, line)
             if mo:
@@ -1877,7 +1877,7 @@ class AttributeList:
     @staticmethod
     def translate():
         assert Lex.next() is AttributeList
-        reader.read()   # Discard attribute list from reader.
+        core.g.reader.read()   # Discard attribute list from core.g.reader.
         attrs = {}
         d = AttributeList.match.groupdict()
         for k,v in d.items():
@@ -1921,7 +1921,7 @@ class BlockTitle:
     @staticmethod
     def isnext():
         result = False  # Assume not next.
-        line = reader.read_next()
+        line = core.g.reader.read_next()
         if line:
             mo = re.match(BlockTitle.pattern,line)
             if mo:
@@ -1931,7 +1931,7 @@ class BlockTitle:
     @staticmethod
     def translate():
         assert Lex.next() is BlockTitle
-        reader.read()   # Discard title from reader.
+        core.g.reader.read()   # Discard title from core.g.reader.
         # Perform title substitutions.
         if not Title.subs:
             Title.subs = core.g.config.subsnormal
@@ -1964,12 +1964,12 @@ class Title:
         raise AssertionError('no class instances allowed')
     @staticmethod
     def translate(skipsubs=False):
-        """Parse the Title.attributes and Title.level from the reader. The
+        """Parse the Title.attributes and Title.level from the core.g.reader. The
         real work has already been done by parse()."""
         assert Lex.next() in (Title,FloatingTitle)
-        # Discard title from reader.
+        # Discard title from core.g.reader.
         for i in range(Title.linecount):
-            reader.read()
+            core.g.reader.read()
         Title.setsectname()
         if not skipsubs:
             Title.attributes['title'] = Title.dosubs(Title.attributes['title'])
@@ -1987,7 +1987,7 @@ class Title:
         return title
     @staticmethod
     def isnext():
-        lines = reader.read_ahead(2)
+        lines = core.g.reader.read_ahead(2)
         return Title.parse(lines)
     @staticmethod
     def parse(lines):
@@ -2469,25 +2469,25 @@ class AbstractBlock:
                     message.warning('missing styles templates: [%s]' % self.defname)
 
     def isnext(self):
-        """Check if this block is next in document reader."""
+        """Check if this block is next in document core.g.reader."""
         result = False
-        reader.skip_blank_lines()
-        if reader.read_next():
+        core.g.reader.skip_blank_lines()
+        if core.g.reader.read_next():
             if not self.delimiter_reo:
                 # Cache compiled delimiter optimization.
                 self.delimiter_reo = re.compile(self.delimiter)
-            mo = self.delimiter_reo.match(reader.read_next())
+            mo = self.delimiter_reo.match(core.g.reader.read_next())
             if mo:
                 self.mo = mo
                 result = True
         return result
 
     def translate(self):
-        """Translate block from document reader."""
+        """Translate block from document core.g.reader."""
         if not self.presubs:
             self.presubs = core.g.config.subsnormal
-        if reader.cursor:
-            self.start = reader.cursor[:]
+        if core.g.reader.cursor:
+            self.start = core.g.reader.cursor[:]
 
     def push_blockname(self, blockname=None):
         '''On block entry set the `blockname` attribute.
@@ -2669,8 +2669,8 @@ class Paragraph(AbstractBlock):
         BlockTitle.consume(attrs)
         AttributeList.consume(attrs)
         self.merge_attributes(attrs)
-        reader.read()   # Discard (already parsed item first line).
-        body = reader.read_until(paragraphs.terminators)
+        core.g.reader.read()   # Discard (already parsed item first line).
+        body = core.g.reader.read_until(paragraphs.terminators)
         if 'skip' in self.parameters.options:
             return
         body = [self.text] + list(body)
@@ -2766,7 +2766,7 @@ class List(AbstractBlock):
         writer.write(labeltag[0],trace='list label open')
         # Write labels.
         while Lex.next() is self:
-            reader.read()   # Discard (already parsed item first line).
+            core.g.reader.read()   # Discard (already parsed item first line).
             writer.write_tag(self.tag.term, [self.label],
                              self.presubs, self.attributes,trace='list term')
             if self.text: break
@@ -2780,15 +2780,15 @@ class List(AbstractBlock):
         itemtag = subs_tag(self.tag.item, self.attributes)
         writer.write(itemtag[0],trace='list item open')
         # Write ItemText.
-        text = reader.read_until(lists.terminators)
+        text = core.g.reader.read_until(lists.terminators)
         if self.text:
             text = [self.text] + list(text)
         if text:
             writer.write_tag(self.tag.text, text, self.presubs, self.attributes,trace='list text')
         # Process explicit and implicit list item continuations.
         while True:
-            continuation = reader.read_next() == '+'
-            if continuation: reader.read()  # Discard continuation line.
+            continuation = core.g.reader.read_next() == '+'
+            if continuation: core.g.reader.read()  # Discard continuation line.
             while Lex.next() in (BlockTitle,AttributeList):
                 # Consume continued element title and attributes.
                 Lex.next().translate()
@@ -2927,7 +2927,7 @@ class List(AbstractBlock):
             if self.type in ('numbered','callout'):
                 self.check_index()
             if self.type in ('bulleted','numbered','callout'):
-                reader.read()   # Discard (already parsed item first line).
+                core.g.reader.read()   # Discard (already parsed item first line).
                 self.translate_item()
             elif self.type == 'labeled':
                 self.translate_entry()
@@ -3010,7 +3010,7 @@ class DelimitedBlock(AbstractBlock):
         return AbstractBlock.isnext(self)
     def translate(self):
         AbstractBlock.translate(self)
-        reader.read()   # Discard delimiter.
+        core.g.reader.read()   # Discard delimiter.
         self.merge_attributes(AttributeList.attrs)
         if not 'skip' in self.parameters.options:
             BlockTitle.consume(self.attributes)
@@ -3018,10 +3018,10 @@ class DelimitedBlock(AbstractBlock):
         self.push_blockname()
         options = self.parameters.options
         if 'skip' in options:
-            reader.read_until(self.delimiter,same_file=True)
+            core.g.reader.read_until(self.delimiter,same_file=True)
         elif safe() and self.defname == 'blockdef-backend':
             message.unsafe('Backend Block')
-            reader.read_until(self.delimiter,same_file=True)
+            core.g.reader.read_until(self.delimiter,same_file=True)
         else:
             template = self.parameters.template
             template = subs_attrs(template,self.attributes)
@@ -3034,7 +3034,7 @@ class DelimitedBlock(AbstractBlock):
                 writer.write(etag,trace=name+' close')
             else:
                 stag = core.g.config.section2tags(template,self.attributes,skipend=True)[0]
-                body = reader.read_until(self.delimiter,same_file=True)
+                body = core.g.reader.read_until(self.delimiter,same_file=True)
                 presubs = self.parameters.presubs
                 postsubs = self.parameters.postsubs
                 body = Lex.subs(body,presubs)
@@ -3045,10 +3045,10 @@ class DelimitedBlock(AbstractBlock):
                 etag = core.g.config.section2tags(template,self.attributes,skipstart=True)[1]
                 writer.write(dovetail_tags(stag,body,etag),trace=name)
             trace(self.short_name()+' block close',etag)
-        if reader.eof():
+        if core.g.reader.eof():
             self.error('missing closing delimiter',self.start)
         else:
-            delimiter = reader.read()   # Discard delimiter line.
+            delimiter = core.g.reader.read()   # Discard delimiter line.
             assert re.match(self.delimiter,delimiter)
         self.pop_blockname()
 
@@ -3540,7 +3540,7 @@ class Table(AbstractBlock):
         return cells
     def translate(self):
         AbstractBlock.translate(self)
-        reader.read()   # Discard delimiter.
+        core.g.reader.read()   # Discard delimiter.
         # Reset instance specific properties.
         self.columns = []
         self.rows = []
@@ -3556,11 +3556,11 @@ class Table(AbstractBlock):
         self.attributes['tableabswidth'] = int(self.abswidth)
         self.attributes['tablepcwidth'] = int(self.pcwidth)
         # Read the entire table.
-        text = reader.read_until(self.delimiter)
-        if reader.eof():
+        text = core.g.reader.read_until(self.delimiter)
+        if core.g.reader.eof():
             self.error('missing closing delimiter',self.start)
         else:
-            delimiter = reader.read()   # Discard closing delimiter.
+            delimiter = core.g.reader.read()   # Discard closing delimiter.
             assert re.match(self.delimiter,delimiter)
         if len(text) == 0:
             message.warning('[%s] table is empty' % self.defname)
@@ -3754,9 +3754,9 @@ class Macros:
                     result = m.subs(result)
         return result
     def isnext(self):
-        """Return matching macro if block macro is next on reader."""
-        reader.skip_blank_lines()
-        line = reader.read_next()
+        """Return matching macro if block macro is next on core.g.reader."""
+        core.g.reader.skip_blank_lines()
+        line = core.g.reader.read_next()
         if line:
             for m in self.macros:
                 if m.prefix == '#':
@@ -3932,7 +3932,7 @@ class Macro:
     def translate(self):
         """ Block macro translation."""
         assert self.prefix == '#'
-        s = reader.read()
+        s = core.g.reader.read()
         before = s
         if self.has_passthrough():
             s = macros.extract_passthroughs(s,'#')
@@ -4036,7 +4036,7 @@ class CalloutMap:
 UTF8_BOM = b'\xef\xbb\xbf'
 
 class Reader1:
-    """Line oriented AsciiDoc input file reader.
+    """Line oriented AsciiDoc input file core.g.reader.
 
     The reader processes include and conditional inclusion system macros.
     Tabs are expanded and lines are right trimmed.
@@ -4052,7 +4052,7 @@ class Reader1:
                                 # (filename, linenumber, linetext) tuples.
         self.cursor = None      # Last read() (filename, linenumber, linetext).
         self.tabsize = 8        # Tab expansion number of spaces.
-        self.parent = None      # Included reader's parent reader.
+        self.parent = None      # Included reader's parent core.g.reader.
         self._lineno = 0        # The last line read from file object f.
         self.current_depth = 0  # Current include depth.
         self.max_depth = 10     # Initial maximum allowed include depth.
@@ -4214,7 +4214,7 @@ class Reader1:
             # End of current file.
             if self.parent:
                 self.closefile()
-                assign(self, self.parent)    # Restore parent reader.
+                assign(self, self.parent)    # Restore parent core.g.reader.
                 core.g.document.attributes['infile'] = self.infile
                 core.g.document.attributes['indir'] = self.indir
                 return Reader1.eof(self)
@@ -4378,7 +4378,7 @@ class Reader(Reader1):
         return tuple(result)
 
     def skip_blank_lines(self):
-        reader.read_until(r'\s*\S+')
+        core.g.reader.read_until(r'\s*\S+')
 
     def read_until(self, terminators, same_file=False):
         """Like read() but reads lines up to (but not including) the first line
@@ -5526,20 +5526,20 @@ class Table_OLD(AbstractBlock):
                     raise EAsciiDoc('illegal [%s] %s: %s' % (self.defname,k,v))
         self.merge_attributes(attrs)
         # Parse table ruler.
-        ruler = reader.read()
+        ruler = core.g.reader.read()
         assert re.match(self.delimiter,ruler)
         self.parse_ruler(ruler)
         # Read the entire table.
         table = []
         while True:
-            line = reader.read_next()
+            line = core.g.reader.read_next()
             # Table terminated by underline followed by a blank line or EOF.
             if len(table) > 0 and re.match(self.underline,table[-1]):
                 if line in ('',None):
                     break;
             if line is None:
                 raise EAsciiDoc('closing [%s] underline expected' % self.defname)
-            table.append(reader.read())
+            table.append(core.g.reader.read())
         # EXPERIMENTAL: The number of lines in the table, requested by Benjamin Klum.
         self.attributes['rows'] = str(len(table))
         if self.check_msg:  # Skip if table definition was marked invalid.
@@ -5870,7 +5870,7 @@ core.g.help_file = HELP_FILE
 # -------
 core.g.document = Document()    # The document being processed.
 core.g.config = Config()        # Configuration file reader.
-reader = Reader()           # Input stream line reader.
+core.g.reader = Reader()        # Input stream line reader.
 writer = Writer()           # Output stream line writer.
 message = Message()         # Message functions.
 paragraphs = Paragraphs()   # Paragraph definitions.
@@ -5945,8 +5945,8 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         core.g.document.infile = infile
         AttributeList.initialize()
         # Open input file and parse document header.
-        reader.tabsize = core.g.config.tabsize
-        reader.open(infile)
+        core.g.reader.tabsize = core.g.config.tabsize
+        core.g.reader.open(infile)
         has_header = core.g.document.parse_header(doctype,backend)
         # doctype is now finalized.
         core.g.document.attributes['doctype-'+core.g.document.doctype] = ''
@@ -6030,7 +6030,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
                 finally:
                     writer.close()
             finally:
-                reader.closefile()
+                core.g.reader.closefile()
     except KeyboardInterrupt:
         raise
     except Exception as e:
@@ -6039,7 +6039,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             os.unlink(outfile)
         # Build and print error description.
         msg = 'FAILED: '
-        if reader.cursor:
+        if core.g.reader.cursor:
             msg = message.format('', msg)
         if isinstance(e, EAsciiDoc):
             message.stderr('%s%s' % (msg,str(e)))
