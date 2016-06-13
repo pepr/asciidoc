@@ -436,6 +436,11 @@ class Writer:
             self.f = sys.stdout
         else:
             encoding = core.g.document.attributes['encoding']
+
+            # The utf-8-sig encoder writes also BOM to the beginning. For
+            # concatenating resulting files or for some tools, the presence
+            # of BOM may cause problems. Therefore, if the utf-8-sig encoding
+            # is prescribed, it is changed to plain utf-8 (that is without BOM).
             if encoding == 'utf-8-sig':
                 encoding = 'utf-8'
             self.f = open(fname, 'w', encoding=encoding)
@@ -1426,8 +1431,8 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
                     core.g.config.load_file(f, include=include, exclude=exclude)
                 else:
                     raise EAsciiDoc('missing configuration file: %s' % f)
-
     try:
+        print('??? asciidoc')
         core.g.document.attributes['python'] = sys.executable
         for f in core.g.config.filters:
             if not core.g.config.find_config_dir('filters', f):
@@ -1439,7 +1444,9 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             if o == '-c': core.g.config.dumping = True
             if o == '-s': core.g.config.header_footer = False
             if o == '-v': core.g.config.verbose = True
+        print('??? before document.update_attributes')
         core.g.document.update_attributes()
+        print('??? after document.update_attributes')
         if '-e' not in options:
             # Load asciidoc.conf files in two passes: the first for attributes
             # the second for everything. This is so that locally set attributes
@@ -1447,15 +1454,20 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             if not core.g.config.load_from_dirs('asciidoc.conf',include=['attributes']):
                 raise EAsciiDoc('configuration file asciidoc.conf missing')
             load_conffiles(include=['attributes'])
+            print('??? after load_conffiles')
+            print('??? before load_from_dirs')
             core.g.config.load_from_dirs('asciidoc.conf')
+            print('??? after load_from_dirs')
             if infile != '<stdin>':
                 indir = os.path.dirname(infile)
+                print('??? before config.load_file', indir)
                 core.g.config.load_file('asciidoc.conf', indir,
                                 include=['attributes','titles','specialchars'])
         else:
             load_conffiles(include=['attributes','titles','specialchars'])
         core.g.document.update_attributes()
         # Check the infile exists.
+        print('??? before check infile existence')
         if infile != '<stdin>':
             if not os.path.isfile(infile):
                 raise EAsciiDoc('input file %s missing' % infile)
@@ -1463,7 +1475,9 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         AttributeList.initialize()
         # Open input file and parse document header.
         core.g.reader.tabsize = core.g.config.tabsize
+        print('??? before open ', infile)
         core.g.reader.open(infile)
+        print('??? after open ', infile)
         has_header = core.g.document.parse_header(doctype,backend)
         # doctype is now finalized.
         core.g.document.attributes['doctype-'+core.g.document.doctype] = ''
@@ -1636,7 +1650,9 @@ def execute(cmd, opts, args):
 
        >>>
     """
+    print('???execute', cmd, opts, args)
     core.g.config.init(cmd)
+    print('??? afeter config.init(cmd)')
     if len(args) > 1:
         usage('Too many arguments')
         sys.exit(1)
@@ -1705,6 +1721,7 @@ def execute(cmd, opts, args):
         usage('No source file specified')
         sys.exit(1)
     stdin,stdout = sys.stdin,sys.stdout
+    print('??? before try')
     try:
         infile = args[0]
         if infile == '-':
@@ -1725,8 +1742,11 @@ def execute(cmd, opts, args):
             sys.stdout = outfile
             outfile = '<stdout>'
         # Do the work.
+        print('??? before asciidoc()')
         asciidoc(backend, doctype, confiles, infile, outfile, options)
+        print('??? after asciidoc()')
         if core.g.document.has_errors:
+            print('??? document has errors')
             sys.exit(1)
     finally:
         sys.stdin,sys.stdout = stdin,stdout
