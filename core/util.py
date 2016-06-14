@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 
 import core.g
 
@@ -1267,3 +1268,7 @@ class Lex:
         for i in range(len(lines)):
             lines[i] = ' '*margin + lines[i][width:]
         return lines
+
+# Blind move: Probably because of some cyclic references, the following import
+# must be at the end. Don't ask me :)
+from core.document import *

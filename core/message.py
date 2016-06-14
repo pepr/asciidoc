@@ -1,3 +1,5 @@
+import os
+
 import core.g
 
 class Message:

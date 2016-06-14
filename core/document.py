@@ -3,11 +3,25 @@
 Document element classes parse AsciiDoc reader input and write DocBook writer
 output."""
 
-import time
+
+import collections
 import re
+import time
 
 import core.g
-from core.util import InsensitiveDict, time_str, date_str, localapp, EAsciiDoc
+from core.util import *
+
+#---------------------------------------------------------------------------
+# Program constants.
+#---------------------------------------------------------------------------
+DEFAULT_BACKEND = 'html'
+DEFAULT_DOCTYPE = 'article'
+
+# Allowed substitution options for List, Paragraph and DelimitedBlock
+# definition subs entry.
+SUBS_OPTIONS = ('specialcharacters', 'quotes', 'specialwords',
+    'replacements', 'attributes', 'macros', 'callouts', 'normal', 'verbatim',
+    'none', 'replacements2', 'replacements3')
 
 class Document:
 
@@ -693,11 +707,14 @@ class Title:
     @staticmethod
     def load(entries):
         """Load and validate [titles] section entries dictionary."""
+        print('??? Title.load', entries)
         if 'underlines' in entries:
+            print('??? a')
             errmsg = 'malformed [titles] underlines entry'
             try:
                 underlines = parse_list(entries['underlines'])
-            except Exception:
+            except Exception as e:
+                print('??? exception', e)
                 raise EAsciiDoc(errmsg)
             if len(underlines) != len(Title.underlines):
                 raise EAsciiDoc(errmsg)
@@ -3176,4 +3193,3 @@ class Tables_OLD(AbstractBlocks):
 
 # End of deprecated old table classes.
 #---------------------------------------------------------------------------
-                        
