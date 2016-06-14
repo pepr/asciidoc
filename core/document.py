@@ -707,14 +707,11 @@ class Title:
     @staticmethod
     def load(entries):
         """Load and validate [titles] section entries dictionary."""
-        print('??? Title.load', entries)
         if 'underlines' in entries:
-            print('??? a')
             errmsg = 'malformed [titles] underlines entry'
             try:
                 underlines = parse_list(entries['underlines'])
-            except Exception as e:
-                print('??? exception', e)
+            except Exception:
                 raise EAsciiDoc(errmsg)
             if len(underlines) != len(Title.underlines):
                 raise EAsciiDoc(errmsg)

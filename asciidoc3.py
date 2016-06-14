@@ -602,7 +602,6 @@ class Config:
                     else:
                         # Replace section.
                         sections[section] = contents
-        print('??? Config.load_file', fname)
         if dir:
             fname = os.path.join(dir, fname)
         # Sliently skip missing configuration file.
@@ -622,7 +621,6 @@ class Config:
         section,contents = '',[]
         while not rdr.eof():
             s = rdr.read()
-            ##print('??? Config.load_file after rdr.read()', repr(s))
             if s and s[0] == '#':       # Skip comment lines.
                 continue
             if s[:2] == '\\#':          # Unescape lines starting with '#'.
@@ -635,9 +633,7 @@ class Config:
                 contents = []
             else:
                 contents.append(s)
-        print('??? before update_section')
         update_section(section)         # Store last section.
-        print('??? after update_section')
         rdr.close()
         if include:
             for s in set(sections) - set(include):
@@ -646,9 +642,7 @@ class Config:
             for s in set(sections) & set(exclude):
                 del sections[s]
         attrs = {}
-        print('??? Config.load_file before load_sections')
         self.load_sections(sections,attrs)
-        print('??? Config.load_file after load_sections')
         if not include:
             # If all sections are loaded mark this file as loaded.
             self.loaded.append(os.path.realpath(fname))
@@ -661,8 +655,6 @@ class Config:
         list of lines.
         Updates 'attrs' with parsed [attributes] section entries.
         """
-        print('??? Config.load_sections', type(sections), list(sections))
-        ##print('??? ', '\n'.join(repr(item) for item in sections.items()))
         # Delete trailing blank lines from sections.
         for k in sections:
             for i in range(len(sections[k])-1,-1,-1):
@@ -670,7 +662,6 @@ class Config:
                     del sections[k][i]
                 elif not self.entries_section(k):
                     break
-        print('??? Config.load_sections after delete trailing blank lines')
         # Update new sections.
         for k,v in sections.items():
             if k.startswith('+'):
@@ -684,7 +675,6 @@ class Config:
                 # Replace section.
                 self.sections[k] = v
         self.parse_tags()
-        print('??? Config.load_sections after parse_tags')
         # Internally [miscellaneous] section entries are just attributes.
         d = {}
         parse_entries(sections.get('miscellaneous',()), d, unquote=True,
@@ -696,9 +686,7 @@ class Config:
             attrs.update(d)
         d = {}
         parse_entries(sections.get('titles',()),d)
-        print('??? Config.load_sections before Title.load')
         Title.load(d)
-        print('??? Config.load_sections after Title.load')
         parse_entries(sections.get('specialcharacters',()),self.specialchars,escape_delimiter=False)
         parse_entries(sections.get('quotes',()),self.quotes)
         self.parse_specialwords()
@@ -752,7 +740,6 @@ class Config:
         """
         count = 0
         for f in self.find_in_dirs(filename,dirs):
-            print('??? Config.load_from_dirs', f)
             if self.load_file(f, include=include):
                 count += 1
         return count != 0
@@ -1437,7 +1424,6 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
                 else:
                     raise EAsciiDoc('missing configuration file: %s' % f)
     try:
-        print('??? asciidoc')
         core.g.document.attributes['python'] = sys.executable
         for f in core.g.config.filters:
             if not core.g.config.find_config_dir('filters', f):
@@ -1449,9 +1435,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             if o == '-c': core.g.config.dumping = True
             if o == '-s': core.g.config.header_footer = False
             if o == '-v': core.g.config.verbose = True
-        print('??? before document.update_attributes')
         core.g.document.update_attributes()
-        print('??? after document.update_attributes')
         if '-e' not in options:
             # Load asciidoc.conf files in two passes: the first for attributes
             # the second for everything. This is so that locally set attributes
@@ -1459,20 +1443,15 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
             if not core.g.config.load_from_dirs('asciidoc.conf',include=['attributes']):
                 raise EAsciiDoc('configuration file asciidoc.conf missing')
             load_conffiles(include=['attributes'])
-            print('??? after load_conffiles')
-            print('??? before load_from_dirs')
             core.g.config.load_from_dirs('asciidoc.conf')
-            print('??? after load_from_dirs')
             if infile != '<stdin>':
                 indir = os.path.dirname(infile)
-                print('??? before config.load_file', indir)
                 core.g.config.load_file('asciidoc.conf', indir,
                                 include=['attributes','titles','specialchars'])
         else:
             load_conffiles(include=['attributes','titles','specialchars'])
         core.g.document.update_attributes()
         # Check the infile exists.
-        print('??? before check infile existence')
         if infile != '<stdin>':
             if not os.path.isfile(infile):
                 raise EAsciiDoc('input file %s missing' % infile)
@@ -1480,9 +1459,7 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
         AttributeList.initialize()
         # Open input file and parse document header.
         core.g.reader.tabsize = core.g.config.tabsize
-        print('??? before open ', infile)
         core.g.reader.open(infile)
-        print('??? after open ', infile)
         has_header = core.g.document.parse_header(doctype,backend)
         # doctype is now finalized.
         core.g.document.attributes['doctype-'+core.g.document.doctype] = ''
@@ -1655,9 +1632,7 @@ def execute(cmd, opts, args):
 
        >>>
     """
-    print('???execute', cmd, opts, args)
     core.g.config.init(cmd)
-    print('??? afeter config.init(cmd)')
     if len(args) > 1:
         usage('Too many arguments')
         sys.exit(1)
@@ -1726,7 +1701,6 @@ def execute(cmd, opts, args):
         usage('No source file specified')
         sys.exit(1)
     stdin,stdout = sys.stdin,sys.stdout
-    print('??? before try')
     try:
         infile = args[0]
         if infile == '-':
@@ -1747,11 +1721,8 @@ def execute(cmd, opts, args):
             sys.stdout = outfile
             outfile = '<stdout>'
         # Do the work.
-        print('??? before asciidoc()')
         asciidoc(backend, doctype, confiles, infile, outfile, options)
-        print('??? after asciidoc()')
         if core.g.document.has_errors:
-            print('??? document has errors')
             sys.exit(1)
     finally:
         sys.stdin,sys.stdout = stdin,stdout
