@@ -1540,6 +1540,8 @@ def asciidoc(backend, doctype, confiles, infile, outfile, options):
                 core.g.writer.open(outfile)
                 try:
                     core.g.document.translate(has_header) # Generate the output.
+                except Exception as e:
+                    print('??? e exception', e)
                 finally:
                     core.g.writer.close()
             finally:

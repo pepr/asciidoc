@@ -389,7 +389,8 @@ def parse_attributes(attrs,dict):
             d = {}
             d.update(get_args(s))
             d.update(get_kwargs(s))
-        except Exception:
+        except Exception as e:
+            print('??? parse_attributes exception', e)
             return  # If there's a syntax error leave with {0}=attrs.
         for k in list(d.keys()):  # Drop any empty positional arguments.
             if d[k] == '': del d[k]
