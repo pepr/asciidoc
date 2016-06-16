@@ -261,10 +261,12 @@ class Document:
             if Lex.next() is not Title:
                 Section.translate_body()
         # Process remaining sections.
+        print('??? tr before while')
         while not core.g.reader.eof():
             if Lex.next() is not Title:
                 raise EAsciiDoc('section title expected')
             Section.translate()
+            print('??? tr after Section.translate')
         Section.setlevel(0) # Write remaining unwritten section close tags.
         # Substitute document parameters and write document footer.
         if core.g.config.header_footer:
@@ -908,14 +910,18 @@ class Section:
         core.g.writer.write(stag,trace='section open: level %d: %s' %
                 (Title.level, Title.attributes['title']))
         Section.translate_body()
+
     @staticmethod
     def translate_body(terminator=Title):
+        print('??? Section.translate_body')
         isempty = True
         next = Lex.next()
         while next and next is not terminator:
             if isinstance(terminator,DelimitedBlock) and next is Title:
                 core.g.message.error('section title not permitted in delimited block')
+            print('??? before next.translate', next)
             next.translate()
+            print('??? after next.translate', next)
             next = Lex.next()
             isempty = False
         # The section is not empty if contains a subsection.
@@ -1666,20 +1672,31 @@ class DelimitedBlock(AbstractBlock):
     def isnext(self):
         return AbstractBlock.isnext(self)
     def translate(self):
+        print('??? DelimitedBlock.translate')
         AbstractBlock.translate(self)
         core.g.reader.read()   # Discard delimiter.
         self.merge_attributes(AttributeList.attrs)
         if not 'skip' in self.parameters.options:
+            print('??? before BlockTitle.consume', self.attributes)
             BlockTitle.consume(self.attributes)
+            print('??? after BlockTitle.consume', self.attributes)
             AttributeList.consume()
+            print('??? after AttributeList.consume')
+        print('??? before push_blockname')
         self.push_blockname()
+        print('??? after push_blockname')
         options = self.parameters.options
         if 'skip' in options:
+            print('??? xxx a be')
             core.g.reader.read_until(self.delimiter,same_file=True)
+            print('??? xxx a af')
         elif safe() and self.defname == 'blockdef-backend':
+            print('??? xxx b be')
             core.g.message.unsafe('Backend Block')
             core.g.reader.read_until(self.delimiter,same_file=True)
+            print('??? xxx b after')
         else:
+            print('??? xxx c before')
             template = self.parameters.template
             template = subs_attrs(template,self.attributes)
             name = self.short_name()+' block'
@@ -1702,6 +1719,7 @@ class DelimitedBlock(AbstractBlock):
                 etag = core.g.config.section2tags(template,self.attributes,skipstart=True)[1]
                 core.g.writer.write(dovetail_tags(stag,body,etag),trace=name)
             core.g.trace(self.short_name()+' block close',etag)
+            print('??? xxx c after')
         if core.g.reader.eof():
             self.error('missing closing delimiter',self.start)
         else:
